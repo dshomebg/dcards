@@ -11,6 +11,10 @@ const schema = z.object({
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   SESSION_SECRET: z.string().min(32),
+  // Временният админ до етап 1 (таблица `users`). Незадължителни: без тях
+  // приложението стартира, само входът отказва.
+  ADMIN_BOOTSTRAP_EMAIL: z.email().optional(),
+  ADMIN_BOOTSTRAP_PASSWORD: z.string().min(8).optional(),
   UPLOADS_DIR: z.string().default('./uploads'),
   MAIL_HOST: z.string().optional(),
   MAIL_PORT: z.coerce.number().int().default(465),

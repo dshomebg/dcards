@@ -1,0 +1,93 @@
+/*
+ * Токените на dcards — публична част и админ на една палитра (`docs/design.md`).
+ * Имената са наследени от пренесените компоненти (`bg-nav`, `rail-active`,
+ * `text-hint`, `wide:`) и не се менят — 22 срещания в 16 файла разчитат на тях;
+ * сменят се само стойностите. Числа за контраст тук няма: не се пишат без
+ * измерване.
+ */
+
+@theme {
+  /* Основните имена на палитрата — публичната част ги ползва направо. */
+  --color-bg: #f4f6f5;
+  --color-ink: #2f4a54;
+  --color-sand: #d9cfc0;
+  --color-brass: #a67c52;
+
+  /* `brand` е действието на екрана (главен бутон, връзка) — ЕДИН на екран. */
+  --color-brand: #4e6e7a;
+  --color-brand-hover: #3f5a64;
+  --color-brand-subtle: #e6ecee;
+  --color-brand-contrast: #ffffff;
+
+  /* Повърхности: картите са бели върху off-white страница; рамките са от sand. */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f0ebe3;
+  --color-border: #d9cfc0;
+
+  /* Панелът има свои токени, а не `surface`: смяната ѝ пребоядисва и картите. */
+  --color-nav: #ffffff;
+  --color-nav-hover: #ede7dd;
+
+  --color-page: #f4f6f5;
+
+  /* Избраното в лентата е с марката, не с червено — червеното значи „опасно". */
+  --color-rail-active: #4e6e7a;
+  --color-rail-active-subtle: #e6ecee;
+  --color-rail-active-ink: #2f4a54;
+  --color-rail-active-contrast: #ffffff;
+
+  --color-text: #2f4a54;
+  --color-text-muted: #5f7680;
+
+  /* Смисловите тонове не са марка — остават. Всеки има плътна заливка,
+     `-subtle` подложка и `-ink` за текст върху нея. */
+  --color-success: #16a34a;
+  --color-success-subtle: #dcfce7;
+  --color-success-ink: #15803d;
+
+  --color-warning: #eab308;
+  --color-warning-subtle: #fef9c3;
+  --color-warning-ink: #854d0e;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-danger-subtle: #fee2e2;
+  --color-danger-ink: #b91c1c;
+  --color-danger-contrast: #ffffff;
+
+  --color-info: #2563eb;
+  --color-info-subtle: #dbeafe;
+  --color-info-ink: #1d4ed8;
+
+  /* Затъмнението зад модален диалог — тъмно, за да отдели диалога от екрана. */
+  --color-overlay: #1a262b;
+
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --radius-control: 0.375rem;
+  --radius-card: 0.5rem;
+
+  /* Сянката е геометрия плюс тониран slate с прозрачност, не цвят от палитрата. */
+  --shadow-card: 0 0.25rem 1.875rem rgba(47, 74, 84, 0.06);
+
+  /* Етикетът е знак, не четиво: 12 px; подсказката е с пункт по-малка и
+     приглушена. Под 11 px не се слиза. */
+  --text-label: 0.75rem;
+  --text-hint: 0.6875rem;
+
+  /* Четири разстояния по ОТНОШЕНИЕ, не по размер: 5 · 16 · 20 · 32.
+     Подсказката е три пъти по-близо до своето поле, отколкото до следващото. */
+  --spacing-hint: 0.3125rem;
+  --spacing-field: 1rem;
+  --spacing-block: 1.25rem;
+  --spacing-section: 2rem;
+
+  /* ЕДНА височина за поле, списък и бутон — разлика от два пиксела личи. */
+  --spacing-control: 2.125rem;
+
+  /* Единственият праг на подредбата: под него панелът се крие зад бутон. */
+  --breakpoint-wide: 64rem;
+}

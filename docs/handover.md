@@ -5,8 +5,14 @@
 
 ## Докъде сме
 
-**Етап 0 (инфраструктура и скеле) е готов локално, НЕ е деплойван.** Нищо не е комитнато
-след „first commit" на собственика — дървото чака неговия комит.
+**Етап 0 (инфраструктура и скеле) е комитнат. `ADM-1` (скелет на админа) е готов локално и
+чака комит.** Нищо не е деплойвано.
+
+`ADM-1`: `/admin/login` с временен акаунт от `.env` (`ADMIN_BOOTSTRAP_*`), сесия в Redis,
+пазач в `admin/(protected)/layout.tsx`, двоен панел, 5 секции, 7 екрана „предстои";
+`components/{ui,list,form,nav}` и `hooks` пренесени от pagagal. Минал е analyzer → programmer
+→ reviewer + security → поправки → 53 теста + Playwright на живо. Дневникът е в
+`docs/tasks/ADM-1-admin-skeleton.md`.
 
 Работи и е проверено:
 
@@ -29,6 +35,13 @@
 Преди това собственикът решава: канонично `www` или apex (виж `go-live.md`).
 
 ## Капани, които вече ни хванаха
+
+- **`next build` от Git Bash с cwd `/f/01DCARDS` пада** („Expected workStore to be initialized")
+  — малка буква на диска кара Next да зареди модулите си двойно; от PowerShell с главна буква (`F:`)
+  минава. Не е код.
+- **Playwright снимка + `autoFocus` дава hydration warning** (`caret-color: transparent`) —
+  артефакт на инструмента, не на приложението. Скриптът е в `%TEMP%\dcards-e2e\login.mjs`
+  (временен; ако се окаже полезен — влиза в `scripts/visual/` като при pagagal).
 
 - **Портове 3000–3002 на тази машина са на pagagal dev.** dcards dev е на 3100; Postgres/Redis
   на 5433/6380. Next мълчаливо сменя порта, ако е зает — и после curl-ваш чужд сайт.

@@ -1,0 +1,9 @@
+import type { Metadata } from 'next';
+
+import { ComingSoon } from '../coming-soon';
+
+export const metadata: Metadata = { title: 'Продукти' };
+
+export default function Page() {
+  return <ComingSoon title="Продукти" />;
+}

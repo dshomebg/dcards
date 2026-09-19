@@ -1,15 +1,22 @@
 @import 'tailwindcss';
+@import '../theme/tokens.css';
 
-/* Палитрата от docs/design.md. Компонентите ползват токените, не литералите. */
-@theme {
-  --color-bg: #f4f6f5;
-  --color-brand: #4e6e7a;
-  --color-ink: #2f4a54;
-  --color-sand: #d9cfc0;
-  --color-brass: #a67c52;
-}
+@layer base {
+  /* Изрично светла схема: инак браузърът рисува своите контроли по системната
+     тема и върху светъл екран излизат тъмни полета. */
+  :root {
+    color-scheme: light;
+  }
 
-body {
-  background-color: var(--color-bg);
-  color: var(--color-ink);
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
 }
