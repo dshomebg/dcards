@@ -50,8 +50,7 @@ ssh pagagal 'export PATH=$PATH:/usr/local/hestia/bin && \
 
 ## Какво ОЩЕ не е решено
 
-- Канонично `www` или без: pagagal прави 301 към `www`. Тук `APP_URL` е `https://www.dcards-bg.com`;
-  Hestia `nginx.forcessl.conf` вече прави http → https, но не и apex → www. Решава се преди
-  първия deploy.
+- ~~Канонично `www` или без~~ — решено 2026-09-19: **с www**; `dcards-proxy.stpl` прави 301 от
+  голия домейн, `APP_URL=https://www.dcards-bg.com`.
 - Backup извън pre-deploy dump-овете (нощен, извън сървъра) — pagagal има `backup.sh`; ще се
   пренесе, когато има данни за пазене.
