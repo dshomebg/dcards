@@ -6,7 +6,11 @@
 - Платежен доставчик — myPOS или Stripe; не блокира етапи 1–3.
 - Cloudflare API token — няма; DNS се пипа ръчно от собственика.
 - Webmail (Roundcube) за домейна — не е включен в Hestia; при нужда.
-- Rate limit на `/admin/login`, `/login`, `/register` и Server Actions (Redis) — преди прод.
+- **Rate limit** на `/admin/login`, `/login`, `/register` и Server Actions (Redis) — прод вече е
+  публичен (2026-09-20), това е първият следващ цикъл (OPS-1).
+- Seed за админ в образа (`seed-admin.mjs` през esbuild, като `migrate.mjs`) — първият админ на
+  прода е направен през `/register` + SQL на ръка (2026-09-20).
+- Смяна на парола в `/app/settings` — паролата на прод админа е генерирана, без път за смяна.
 - Потвърждение на имейл при регистрация (`email_verified_at` остава null) — отделен цикъл.
 - Първата admin Server Action трябва сама да вика `getCurrentAdmin()` (AUTH-7 — сваленият админ
   държи жива сесия до твърд reload); admin страниците днес разчитат само на layout-а.

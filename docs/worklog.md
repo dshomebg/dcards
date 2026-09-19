@@ -58,3 +58,11 @@
 - Одит: без експлоатируеми; `primaryColor` се нулира при запис. Ревю: `touchProfile` с JS време.
 - Playwright: превю, лимит 6 с rollback на полетата, ред, запис → `/demo`, смяна на адрес,
   запазен адрес, изтриване на телефон. **Етап 1 от заданието е завършен.**
+
+## 2026-09-20 — Първи деплой
+
+- Bootstrap (`/opt/dcards`), deploy (образ `08ddf0b`), nginx шаблон `dcards-proxy` с 301 → www,
+  HSTS и headers; `www.dcards-bg.com` отговаря, health `ready`, pagagal непокътнат.
+- Спънки: `New-Secret 64` гърмеше (48 байта); Docker build без `.env` — `env()` при импорт в
+  layout metadata и db/redis клиентите → placeholder ENV само в build stage.
+- Първи админ: `/register` + `is_admin` през SQL (seed не е в образа — open-items).
