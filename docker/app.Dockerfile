@@ -17,6 +17,10 @@ RUN --mount=type=cache,id=pnpm-dcards,target=/pnpm/store \
 # ------------------------------------------------------------------- строене
 FROM deps AS build
 ENV NEXT_TELEMETRY_DISABLED=1
+# `next build` импортира всеки route, а `env()` се валидира при импорт (db/redis
+# клиентите). Няма `.env` в образа — стойностите тук са само за строене, нищо не
+# се свързва; истинската среда идва от compose при пускане.
+ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build     REDIS_URL=redis://127.0.0.1:6379     SESSION_SECRET=build-only-placeholder-not-used-at-runtime
 COPY . .
 RUN pnpm build
 

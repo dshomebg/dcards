@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
-import { env } from '@/modules/core';
-
-const name = `${env().APP_NAME} Админ`;
+// Само името, без `env()`: `metadata` се оценява при `next build`, където няма
+// `.env` (Docker) и пълната схема би паднала на DATABASE_URL.
+const name = `${process.env.APP_NAME ?? 'DCARDS'} Админ`;
 
 export const metadata: Metadata = {
   title: { default: name, template: `%s | ${name}` },
