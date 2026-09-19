@@ -111,3 +111,98 @@ export function findVisibleLinks(
     )
     .orderBy(asc(profileLinks.sortOrder), asc(profileLinks.id));
 }
+
+// Редакторът: всяка заявка е с `orgId` И `id` — собствеността се проверява в
+// самата заявка, не преди нея (IDOR).
+
+export async function findProfileByOrgAndId(
+  executor: DbExecutor,
+  orgId: string,
+  profileId: string,
+): Promise<Profile | null> {
+  const rows = await executor
+    .select()
+    .from(profiles)
+    .where(and(eq(profiles.orgId, orgId), eq(profiles.id, profileId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Всички линкове, и скритите — за редактора. Редът е като при видимите. */
+export function findLinksByProfile(
+  executor: DbExecutor,
+  profileId: string,
+): Promise<ProfileLink[]> {
+  return executor
+    .select()
+    .from(profileLinks)
+    .where(eq(profileLinks.profileId, profileId))
+    .orderBy(asc(profileLinks.sortOrder), asc(profileLinks.id));
+}
+
+export type ProfileUpdate = Pick<
+  NewProfile,
+  | 'slug'
+  | 'firstName'
+  | 'lastName'
+  | 'title'
+  | 'company'
+  | 'bio'
+  | 'theme'
+  | 'isPublic'
+>;
+
+/** `null` = няма такъв профил в тази организация. `updatedAt` идва от `$onUpdate`. */
+export async function updateProfileByOrgAndId(
+  executor: DbExecutor,
+  orgId: string,
+  profileId: string,
+  values: ProfileUpdate,
+): Promise<Profile | null> {
+  const rows = await executor
+    .update(profiles)
+    .set(values)
+    .where(and(eq(profiles.orgId, orgId), eq(profiles.id, profileId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/**
+ * Една заявка: проверка за собственост, заключване на реда до края на
+ * транзакцията и bump на `updated_at`. `false` = няма такъв профил.
+ */
+export async function touchProfile(
+  executor: DbExecutor,
+  orgId: string,
+  profileId: string,
+): Promise<boolean> {
+  const rows = await executor
+    .update(profiles)
+    // JS време, като `$onUpdate` — иначе DTO-то и базата се разминават в един запис.
+    .set({ updatedAt: new Date() })
+    .where(and(eq(profiles.orgId, orgId), eq(profiles.id, profileId)))
+    .returning({ id: profiles.id });
+  return rows.length > 0;
+}
+
+export async function deleteLinksByProfile(
+  executor: DbExecutor,
+  profileId: string,
+): Promise<void> {
+  await executor
+    .delete(profileLinks)
+    .where(eq(profileLinks.profileId, profileId));
+}
+
+/** `false` = няма такъв профил в тази организация. Линковете падат по cascade. */
+export async function deleteProfileByOrgAndId(
+  executor: DbExecutor,
+  orgId: string,
+  profileId: string,
+): Promise<boolean> {
+  const rows = await executor
+    .delete(profiles)
+    .where(and(eq(profiles.orgId, orgId), eq(profiles.id, profileId)))
+    .returning({ id: profiles.id });
+  return rows.length > 0;
+}

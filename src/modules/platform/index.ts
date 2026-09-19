@@ -20,8 +20,20 @@ export {
   findPublicProfileBySlug,
   listProfiles,
   ProfileError,
+  profileLinkInputSchema,
+  profileLinksInputSchema,
   type ProfileSummary,
+  profileThemeSchema,
+  updateProfileInputSchema,
 } from './profile.service';
+export {
+  deleteProfile,
+  getProfileForEdit,
+  type ProfileEditDto,
+  type ProfileEditLinkDto,
+  replaceProfileLinks,
+  updateProfile,
+} from './profile-edit.service';
 export { profileUrl } from './profile-url';
 export { renderQrSvg } from './qr';
 export { RESERVED_SLUGS, slugSchema } from './slug';

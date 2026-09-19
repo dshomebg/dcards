@@ -94,8 +94,9 @@ export function ProfileView({ profile, appName, appUrl }: ProfileViewProps) {
   const fullName = `${profile.firstName} ${profile.lastName}`;
   const url = profileUrl(appUrl, profile.slug);
 
+  // Корен `<div>`, не `<main>`: редакторът го влага в превю на своята страница.
   return (
-    <main
+    <div
       data-profile-theme={profile.theme.preset}
       className="flex flex-col items-center px-4 py-10"
     >
@@ -139,6 +140,6 @@ export function ProfileView({ profile, appName, appUrl }: ProfileViewProps) {
           </a>
         </footer>
       </div>
-    </main>
+    </div>
   );
 }

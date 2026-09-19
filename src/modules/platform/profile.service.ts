@@ -1,4 +1,5 @@
-// Създаване, списък и публично четене на профил. Редакция/изтриване — PLT-5.
+// Създаване, списък и публично четене на профил. Схемите и грешките са общи
+// с редакцията (`profile-edit.service.ts`).
 
 import { DrizzleQueryError } from 'drizzle-orm';
 import { z } from 'zod';
@@ -33,7 +34,8 @@ export type ProfileErrorCode =
   | 'slug_taken'
   | 'plan_limit_profiles'
   | 'plan_limit_links'
-  | 'org_not_found';
+  | 'org_not_found'
+  | 'profile_not_found';
 
 const MESSAGES: Readonly<Record<ProfileErrorCode, string>> = {
   input_invalid: 'Има невалидни или твърде дълги полета в профила.',
@@ -44,9 +46,11 @@ const MESSAGES: Readonly<Record<ProfileErrorCode, string>> = {
   plan_limit_profiles: 'Планът Free позволява един профил.',
   plan_limit_links: 'Планът Free позволява до 6 линка.',
   org_not_found: 'Организацията не съществува.',
+  // Един и същ текст за чужд и за несъществуващ профил — както `/{slug}` (DAT-7).
+  profile_not_found: 'Профилът не съществува.',
 };
 
-/** `code` е за тестовете и редактора (PLT-5); `message` е за човека. */
+/** `code` е за тестовете и редактора; `message` е за човека. */
 export class ProfileError extends Error {
   constructor(readonly code: ProfileErrorCode) {
     super(MESSAGES[code]);
@@ -81,7 +85,7 @@ const DEFAULT_THEME: ProfileTheme = {
 };
 
 // Границите пазят публичната страница от неограничен HTML; сервизът се пази
-// сам, не чака извикващият (PLT-5) да валидира.
+// сам, не чака извикващият да валидира.
 const text = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => text(max).nullish();
 
@@ -94,6 +98,15 @@ export const profileThemeSchema = z.object({
   layout: z.literal('default'),
 });
 
+export const profileLinkInputSchema = z.object({
+  type: z.enum(PROFILE_LINK_TYPES),
+  value: text(500).min(1),
+  label: optionalText(60),
+  isVisible: z.boolean().optional(),
+});
+
+export const profileLinksInputSchema = z.array(profileLinkInputSchema).max(50);
+
 export const createProfileInputSchema = z.object({
   orgId: z.uuid(),
   slug: z.string(),
@@ -104,26 +117,21 @@ export const createProfileInputSchema = z.object({
   bio: optionalText(600),
   theme: profileThemeSchema.optional(),
   isPublic: z.boolean().optional(),
-  links: z
-    .array(
-      z.object({
-        type: z.enum(PROFILE_LINK_TYPES),
-        value: text(500).min(1),
-        label: optionalText(60),
-        isVisible: z.boolean().optional(),
-      }),
-    )
-    .max(50)
-    .optional(),
+  links: profileLinksInputSchema.optional(),
 });
 
+// Редакторът праща целия профил — няма частичен update, затова без `optional`.
+export const updateProfileInputSchema = createProfileInputSchema
+  .omit({ orgId: true, links: true })
+  .extend({ theme: profileThemeSchema, isPublic: z.boolean() });
+
 /** Лош ред в базата (през studio) не бива да дава 500 на публичната страница. */
-function safeTheme(raw: unknown): ProfileTheme {
+export function safeTheme(raw: unknown): ProfileTheme {
   const parsed = profileThemeSchema.safeParse(raw);
   return parsed.success ? parsed.data : DEFAULT_THEME;
 }
 
-function assertSlug(slug: string): void {
+export function assertSlug(slug: string): void {
   if (!slugSchema.safeParse(slug).success) {
     throw new ProfileError('slug_invalid');
   }
@@ -143,7 +151,7 @@ function assertLimits(
   }
 }
 
-function isUniqueViolation(error: unknown): boolean {
+export function isUniqueViolation(error: unknown): boolean {
   return (
     error instanceof DrizzleQueryError &&
     (error.cause as { code?: string } | undefined)?.code === '23505'

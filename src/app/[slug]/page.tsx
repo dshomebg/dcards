@@ -61,5 +61,9 @@ export default async function ProfilePage(props: Props) {
   if (profile === null) notFound();
 
   const { APP_NAME, APP_URL } = env();
-  return <ProfileView profile={profile} appName={APP_NAME} appUrl={APP_URL} />;
+  return (
+    <main>
+      <ProfileView profile={profile} appName={APP_NAME} appUrl={APP_URL} />
+    </main>
+  );
 }

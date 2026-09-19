@@ -26,7 +26,9 @@ function Die($text) { Write-Host "  $text" -ForegroundColor Red; exit 1 }
 # екраниране в DATABASE_URL). `RNGCryptoServiceProvider` — PowerShell 5.1 е .NET
 # Framework и няма `RandomNumberGenerator.Fill`.
 function New-Secret([int]$length = 40) {
-    $buffer = New-Object byte[] 48
+    # Двойно повече байтове от искания низ: махането на +/= скъсява base64 и
+    # 48 байта не стигаха за 64 знака (Substring гърмеше при първия bootstrap).
+    $buffer = New-Object byte[] ($length * 2)
     $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
     try { $rng.GetBytes($buffer) } finally { $rng.Dispose() }
     $clean = [Convert]::ToBase64String($buffer) -replace '[+/=]', ''
