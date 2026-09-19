@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+/* Палитрата от docs/design.md. Компонентите ползват токените, не литералите. */
+@theme {
+  --color-bg: #f4f6f5;
+  --color-brand: #4e6e7a;
+  --color-ink: #2f4a54;
+  --color-sand: #d9cfc0;
+  --color-brass: #a67c52;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+}

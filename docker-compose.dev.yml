@@ -1,0 +1,54 @@
+# Инфраструктура за локална разработка. Приложението върви на хоста (`pnpm dev`);
+# в контейнери са само базата и кешът.
+#
+# Портовете са 5433/6380, не 5432/6379: pagagal-dev вече държи стандартните на
+# същата машина. Вързани на 127.0.0.1 нарочно.
+
+name: ${APP_SLUG:-dcards}-dev
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: ${APP_SLUG:-dcards}-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dcards}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dcards}
+      POSTGRES_DB: ${POSTGRES_DB:-dcards_dev}
+      POSTGRES_INITDB_ARGS: '--locale-provider=icu --icu-locale=bg-BG'
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      # ⚠ От PostgreSQL 18 точката на монтиране е /var/lib/postgresql, НЕ .../data.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-dcards} -d ${POSTGRES_DB:-dcards_dev}',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${APP_SLUG:-dcards}-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6380}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+    name: ${APP_SLUG:-dcards}-postgres-data-dev
+  redis-data:
+    name: ${APP_SLUG:-dcards}-redis-data-dev

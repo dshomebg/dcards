@@ -1,0 +1,77 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Env / secrets — никога в git
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+!**/public/**/*.key
+
+# Deploy artifacts
+*.tar
+*.tar.gz
+.deploy-history
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test / coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Снимки на екраните (`pnpm visual`). Не са код, а и снимка на админ с реални
+# данни няма работа в репо, което се предава на клиенти.
+.screenshots/
+.screenshots-storefront/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+
+# Turbo / caches
+.turbo/
+.cache/
+
+# Качени файлове — данни на инсталацията, не код. В прод това е Docker том.
+uploads/
+.test-uploads-*/
+
+# Заявките за връщане от архив (`OPS-18`). В прод това е bind mount от хоста.
+restore-jobs/
+.test-restore-jobs-*/
+
+# Next го генерира сам и пише РАЗЛИЧНО съдържание според това дали последно е
+# тичал `dev` или `build` (`.next/dev/types` срещу `.next/types`). Комитнат, той
+# се преобръща при всяко пускане и цапа всеки диф. TypeScript го пресъздава.
+next-env.d.ts
+
+# Материал от предишния проект (DSHome) — само локална справка.
+# НЕ влиза в репото: съдържа чужди прод адреси, архитектура, одитни доклади и
+# нерешени находки по сигурността. Този код се препродава на клиенти, а те не
+# бива да получават вътрешната документация на друг клиент.
+OLD/
+
+# Купени или свалени ЧУЖДИ шаблони — гледат се за идея, не се копират.
+# НЕ влизат в репото по същия довод, но с още един: лицензът им е чужд, а тази
+# база отива при няколко клиента. Взима се решението, не файлът.
+REFERENCE/
+
+# Настройката на МОСТА към асистента е лична за машината, не за репото.
+.mcp.json

@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.claude
+docs
+scripts
+uploads
+*.tar
+.env
+.env.*
+!.env.example
+REFERENCE

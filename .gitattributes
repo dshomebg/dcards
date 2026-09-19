@@ -1,0 +1,20 @@
+# Единни окончания на редовете — иначе Windows/Linux смесицата пълни diff-овете с шум.
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary
+
+pnpm-lock.yaml -diff linguist-generated

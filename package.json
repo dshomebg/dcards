@@ -1,0 +1,72 @@
+{
+  "name": "dcards",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "next dev --port 3100",
+    "build": "next build && pnpm build:migrate",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src scripts --max-warnings 0",
+    "lint:fix": "eslint src scripts --max-warnings 0 --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,mjs,json,md,yml,yaml,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mjs,json,md,yml,yaml,css}\"",
+    "comments:check": "tsx scripts/comments/check.ts",
+    "verify": "pnpm format:check && pnpm comments:check && pnpm typecheck && pnpm lint && pnpm test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=.env src/modules/core/db/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "infra:up": "docker compose -f docker-compose.dev.yml up -d",
+    "infra:down": "docker compose -f docker-compose.dev.yml down",
+    "infra:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "build:migrate": "esbuild src/modules/core/db/migrate.ts --bundle --platform=node --format=esm --target=node24 --outfile=.next/standalone/migrate.mjs"
+  },
+  "dependencies": {
+    "argon2": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
+    "ioredis": "^6.0.0",
+    "lucide-react": "^1.30.0",
+    "next": "^16.3.4",
+    "nodemailer": "9.1.0",
+    "postgres": "^3.4.9",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^26.2.0",
+    "@types/nodemailer": "8.0.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.4",
+    "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.8.1",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
+    "eslint-plugin-sonarjs": "^4.2.0",
+    "happy-dom": "^20.11.6",
+    "prettier": "^3.9.6",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.11",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.66.0",
+    "vitest": "^4.1.10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "argon2",
+      "esbuild",
+      "sharp"
+    ]
+  }
+}

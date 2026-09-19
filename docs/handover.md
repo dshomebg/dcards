@@ -1,0 +1,49 @@
+# Предаване между сесиите
+
+> **Презаписано:** 2026-09-19, край на първата сесия (инфраструктура + скеле).
+> Чете се веднага след `CLAUDE.md`. Презаписва се, не се дописва. Таван 200 реда.
+
+## Докъде сме
+
+**Етап 0 (инфраструктура и скеле) е готов локално, НЕ е деплойван.** Нищо не е комитнато
+след „first commit" на собственика — дървото чака неговия комит.
+
+Работи и е проверено:
+
+- `pnpm verify` минава (format, comments, typecheck, lint, 1 тест).
+- `pnpm infra:up` → `dcards-postgres-dev` (5433) и `dcards-redis-dev` (6380).
+- `pnpm dev` на :3100 — начална страница + `/api/health/ready` → `{"status":"ready"}`.
+- `pnpm build` → standalone + `migrate.mjs`; `node --env-file=.env .next/standalone/migrate.mjs`
+  минава срещу dev базата (празна история, `drizzle/meta/_journal.json`).
+- `docker build -f docker/app.Dockerfile` → образ 282 MB със `server.js`, `migrate.mjs`, `drizzle/`.
+- Сървър: DNS, Let's Encrypt (web + mail), пощата `info@` с TLS — всичко живо.
+
+Не е правено: bootstrap на `/opt/dcards`, nginx шаблон, първи deploy — `docs/go-live.md`.
+
+## Следващата стъпка
+
+**Етап 1 от `zadanie.md`:** auth (имейл + парола, argon2id, сесии в Redis), организации,
+профили + линкове, публична страница `[slug]`, vCard, QR. Първо — Drizzle схемите на
+`users / organizations / org_members / profiles / profile_links` и първата миграция.
+
+Преди това собственикът решава: канонично `www` или apex (виж `go-live.md`).
+
+## Капани, които вече ни хванаха
+
+- **Портове 3000–3002 на тази машина са на pagagal dev.** dcards dev е на 3100; Postgres/Redis
+  на 5433/6380. Next мълчаливо сменя порта, ако е зает — и после curl-ваш чужд сайт.
+- **Hook-ът `verify-gates` се пуска ПРЕДИ командата.** Редакция + `pnpm verify` в една команда
+  се спира по старото състояние. Редактирай в отделна команда, после `verify`.
+- **Bash heredoc за файлове с кирилица и обратни кавички понякога се спъва** в тази среда —
+  тогава се пише с `Write`, не се бори с екранирането.
+- **Next пренаписва `tsconfig.json`** (jsx → react-jsx, include) и дописва блок в `CLAUDE.md`
+  при първия `dev`/`build`. Не е грешка, не се връща.
+- **DKIM в Cloudflare** беше въведен без `v=DKIM1; k=rsa;` — проверявай пълния TXT, не само
+  дали съществува.
+- **Let's Encrypt за mail домейн в Hestia** иска nginx vhost за `mail.`/`webmail.` само за
+  ACME — `/etc/nginx/conf.d/mail-acme-dcards-bg.conf` по образец на pagagal.
+
+## Общи файлове с pagagal
+
+Копирани и адаптирани, не споделени: `.claude/agents/*`, `pipeline`, `verify-gates.mjs`,
+`scripts/comments/*`, eslint, deploy скриптовете. Промяна там не се синхронизира сама.
