@@ -54,6 +54,16 @@ export async function readSession(): Promise<Admin | null> {
 }
 
 /**
+ * Само ключът в Redis — за Server Component, който не може да пипа cookie-та.
+ * Cookie-то остава, но е мъртво: `readSession` не намира ключ и връща `null`.
+ */
+export async function revokeSession(): Promise<void> {
+  const store = await cookies();
+  const id = store.get(COOKIE_NAME)?.value;
+  if (id !== undefined) await redis.del(keyOf(id));
+}
+
+/**
  * Ключът пада ПРЕДИ cookie-то: върната ръчно стара cookie не отваря нищо.
  * Не успее ли изтриването (паднал Redis), cookie-то ОСТАВА и се връща `false`
  * — иначе сесията оживява, щом Redis се върне, а човекът мисли, че е излязъл.

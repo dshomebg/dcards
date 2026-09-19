@@ -11,3 +11,11 @@
 - Всяка бъдеща страница/Server Action с данни под `/admin` вика `getCurrentAdmin()` сама —
   layout-пазачът не се изпълнява при мека навигация (конвенция, не код сега).
 - Абсолютен таван на сесията (напр. 30 дни) и затваряне на старата при повторен вход.
+- Barrel-ът на `auth` носи `server-only` през `session.ts` → `scripts/` го внася дълбоко
+  (`user.service`). Да се раздели на домейнов и Next-ов barrel; правилото за граници да покрие
+  и `scripts/**`.
+- `vitest.globalSetup.db.ts` / `vitest.setup.db.ts` / `vitest.setup.dom.ts` са извън `tsc` и
+  `eslint`.
+- Инварианти на org (точно един owner, `plan_expires_at` ↔ `plan`) са само в кода — trigger или
+  check при цикъла за управление на организации.
+- `CreateUserInput.isAdmin` излиза през barrel-а — регистрацията НЕ бива да го препраща от вход.

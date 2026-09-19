@@ -5,10 +5,14 @@
 
 ## Докъде сме
 
-**Етап 0 (инфраструктура и скеле) е комитнат. `ADM-1` (скелет на админа) е готов локално и
-чака комит.** Нищо не е деплойвано.
+**Комитнати: етап 0, `ADM-1`. `PLT-1` е готов локално и чака комит.** Нищо не е деплойвано.
+Следват PLT-2 (профили + линкове + публична страница), PLT-3 (vCard, QR), PLT-4 (`/login`, `/app`).
 
-`ADM-1`: `/admin/login` с временен акаунт от `.env` (`ADMIN_BOOTSTRAP_*`), сесия в Redis,
+`PLT-1`: `users`/`organizations`/`org_members` + първа миграция; админът е ред в базата
+(`pnpm db:seed:admin -- --email … --password …`); тестова база в Docker на 55434 (`pnpm test`
+иска Docker). Dev базата има `a@x.bg` / `correct-horse-1`.
+
+`ADM-1`: `/admin/login` (акаунтът вече е от базата — PLT-1), сесия в Redis,
 пазач в `admin/(protected)/layout.tsx`, двоен панел, 5 секции, 7 екрана „предстои";
 `components/{ui,list,form,nav}` и `hooks` пренесени от pagagal. Минал е analyzer → programmer
 → reviewer + security → поправки → 53 теста + Playwright на живо. Дневникът е в
@@ -16,7 +20,7 @@
 
 Работи и е проверено:
 
-- `pnpm verify` минава (format, comments, typecheck, lint, 1 тест).
+- `pnpm verify` минава (format, comments, typecheck, lint, тестове node/dom/db).
 - `pnpm infra:up` → `dcards-postgres-dev` (5433) и `dcards-redis-dev` (6380).
 - `pnpm dev` на :3100 — начална страница + `/api/health/ready` → `{"status":"ready"}`.
 - `pnpm build` → standalone + `migrate.mjs`; `node --env-file=.env .next/standalone/migrate.mjs`

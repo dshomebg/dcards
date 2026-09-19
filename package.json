@@ -26,10 +26,12 @@
     "verify": "pnpm format:check && pnpm comments:check && pnpm typecheck && pnpm lint && pnpm test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/modules/core/db/migrate.ts",
+    "db:seed:admin": "tsx --env-file-if-exists=.env scripts/db/seed-admin.ts",
     "db:studio": "drizzle-kit studio",
     "infra:up": "docker compose -f docker-compose.dev.yml up -d",
     "infra:down": "docker compose -f docker-compose.dev.yml down",
     "infra:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "test:infra:down": "docker compose -f docker-compose.test.yml down -v --timeout 5",
     "build:migrate": "esbuild src/modules/core/db/migrate.ts --bundle --platform=node --format=esm --target=node24 --outfile=.next/standalone/migrate.mjs"
   },
   "dependencies": {

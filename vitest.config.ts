@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 
+import { TEST_ENV } from './vitest.env.js';
+
 const alias = {
   '@': fileURLToPath(new URL('./src', import.meta.url)),
 };
@@ -17,6 +19,7 @@ export default defineConfig({
         test: {
           name: 'node',
           include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+          exclude: ['**/*.db.test.ts'],
         },
         resolve: { alias },
       },
@@ -28,6 +31,21 @@ export default defineConfig({
           environment: 'happy-dom',
           // При `globals: false` `cleanup()` не се закача сам — вика се оттам.
           setupFiles: ['./vitest.setup.dom.ts'],
+        },
+        resolve: { alias },
+      },
+      {
+        // Срещу собствен Postgres в Docker — `docker-compose.test.yml`. Всеки
+        // файл получава своя база от мигрирания образец.
+        test: {
+          name: 'db',
+          include: ['src/**/*.db.test.ts', 'scripts/**/*.db.test.ts'],
+          env: TEST_ENV,
+          globalSetup: ['./vitest.globalSetup.db.ts'],
+          setupFiles: ['./vitest.setup.db.ts'],
+          pool: 'forks',
+          // Вдигането на контейнера отнема време при първо пускане.
+          hookTimeout: 90_000,
         },
         resolve: { alias },
       },

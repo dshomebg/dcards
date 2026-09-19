@@ -1,0 +1,40 @@
+# Еднократен Postgres САМО за тестовете (проект `db` във vitest).
+#
+# Отделен от развойния (5433): тестовете създават и трият бази. Без volume и с
+# изключена издръжливост — данните живеят в паметта, колкото контейнера.
+# Redis не участва: `redis/client.ts` е `lazyConnect` и тестовете не го пипат.
+#
+# Контейнерът ОСТАВА вдигнат след пуск; `pnpm test:infra:down` го спира.
+
+name: dcards-test
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: dcards-test-postgres
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: dcards_test
+    ports:
+      - '127.0.0.1:55434:5432'
+    # Всеки тестов файл получава своя база (`vitest.setup.db.ts`) — връзките
+    # по подразбиране свършват при паралелни работници.
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+    tmpfs:
+      # ⚠ От PostgreSQL 18 точката на монтиране е /var/lib/postgresql, НЕ .../data.
+      - /var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U test -d dcards_test']
+      interval: 2s
+      timeout: 3s
+      retries: 20

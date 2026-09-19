@@ -8,3 +8,5 @@ export {
 } from './actions';
 export { getCurrentAdmin } from './current-admin';
 export { type Admin, type SignInInput, signInSchema } from './schema';
+export { type PublicUser } from './user.schema';
+export { createUser, findUserByEmail } from './user.service';

@@ -158,7 +158,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['@/modules/*/*', '!@/modules/*/index', '../*/*.schema'],
+              group: ['@/modules/*/*', '!@/modules/*/index'],
               message:
                 'Чужд модул — само през barrel-а (`@/modules/<модул>`). Изключение: чужда СХЕМА при външен ключ (`../<модул>/<име>.schema`).',
             },
