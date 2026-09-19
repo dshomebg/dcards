@@ -3,3 +3,4 @@
 
 export * from '../../auth/user.schema';
 export * from '../../platform/organization.schema';
+export * from '../../platform/profile.schema';

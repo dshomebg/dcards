@@ -1,0 +1,38 @@
+/*
+ * Трите теми на публичния профил — слой върху палитрата от `tokens.css`, не нова
+ * палитра. Компонентът ползва само `--profile-*`; brass остава за икони/бордюри.
+ */
+
+[data-profile-theme='light'] {
+  --profile-bg: var(--color-bg);
+  --profile-ink: var(--color-ink);
+  --profile-muted: var(--color-text-muted);
+  --profile-accent: var(--color-brand);
+  --profile-accent-ink: var(--color-brand-contrast);
+  --profile-surface: var(--color-surface);
+}
+
+[data-profile-theme='dark'] {
+  --profile-bg: var(--color-ink);
+  --profile-ink: var(--color-bg);
+  --profile-muted: var(--color-sand);
+  --profile-accent: var(--color-sand);
+  --profile-accent-ink: var(--color-ink);
+  --profile-surface: var(--color-brand-hover);
+}
+
+[data-profile-theme='sand'] {
+  --profile-bg: var(--color-sand);
+  --profile-ink: var(--color-ink);
+  --profile-muted: var(--color-text-muted);
+  --profile-accent: var(--color-brand);
+  --profile-accent-ink: var(--color-brand-contrast);
+  --profile-surface: var(--color-surface);
+}
+
+/* Фонът покрива целия екран — иначе при скрол се показва белият body. */
+[data-profile-theme] {
+  min-height: 100vh;
+  background-color: var(--profile-bg);
+  color: var(--profile-ink);
+}

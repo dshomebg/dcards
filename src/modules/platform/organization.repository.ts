@@ -1,5 +1,7 @@
 // Достъп до `organizations` и `org_members` — единственото място в модула със SQL.
 
+import { and, eq } from 'drizzle-orm';
+
 import type { DbExecutor } from '@/modules/core';
 
 import {
@@ -43,4 +45,22 @@ export function createPersonalOrganization(
 
     return created;
   });
+}
+
+/** Личната организация на потребител — има най-много една (`seed-demo`). */
+export async function findPersonalOrganizationByOwner(
+  executor: DbExecutor,
+  ownerUserId: string,
+): Promise<Organization | null> {
+  const rows = await executor
+    .select()
+    .from(organizations)
+    .where(
+      and(
+        eq(organizations.ownerUserId, ownerUserId),
+        eq(organizations.type, 'personal'),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
 }
