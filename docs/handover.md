@@ -5,8 +5,17 @@
 
 ## Докъде сме
 
-**Комитнати: етап 0, `ADM-1`. `PLT-1` е готов локално и чака комит.** Нищо не е деплойвано.
-Следват PLT-2 (профили + линкове + публична страница), PLT-3 (vCard, QR), PLT-4 (`/login`, `/app`).
+**Комитнати: етап 0, `ADM-1`, `PLT-1`. `PLT-2` и `PLT-3` са готови локално и чакат комит** (за
+предпочитане два отделни). Нищо не е деплойвано. Следва PLT-4 (`/login`, `/register`, `/app`,
+редактор на профил) — с него етап 1 приключва.
+
+`PLT-3`: `/api/vcard/{slug}`, `/api/qr/{slug}`, ред с действия на `/{slug}` (единствен клиентски
+компонент `share-button.tsx`). Ръчна проверка на телефон (.vcf, Web Share през https) — на
+собственика.
+
+`PLT-2`: `profiles`/`profile_links` + миграция `0001`; `/{slug}` SSR (3 теми, OG, 13 типа линкове
+през `linkHref`); `can()` за Free/Pro; `pnpm db:seed:demo -- --email a@x.bg` → `/demo`. Модулът
+`platform` изнася `createProfile`/`findPublicProfileBySlug`/`ProfileError` — PLT-4 стъпва на тях.
 
 `PLT-1`: `users`/`organizations`/`org_members` + първа миграция; админът е ред в базата
 (`pnpm db:seed:admin -- --email … --password …`); тестова база в Docker на 55434 (`pnpm test`

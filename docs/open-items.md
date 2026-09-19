@@ -19,3 +19,11 @@
 - Инварианти на org (точно един owner, `plan_expires_at` ↔ `plan`) са само в кода — trigger или
   check при цикъла за управление на организации.
 - `CreateUserInput.isAdmin` излиза през barrel-а — регистрацията НЕ бива да го препраща от вход.
+- Кеш на `/{slug}` — само след измерен LCP на прод (ARC-6). `updated_at` вече е ключ.
+- Squatting на фирмени имена в slug (zadanie § 11) — не е решено.
+- nginx: rate limit и security headers за публичната страница и `/api/{vcard,qr}` — преди прод.
+- QR като PNG (за печат) и `?size=` — при нужда; никога потребителски `color` към `qrcode`.
+- vCard folding (75 октета) и `PHOTO` — заедно с цикъла за качване на снимка.
+- `.vcf` на iOS/Android и Web Share на телефон през https — ръчна проверка от собственика.
+- `linkHref`: `demo.bg:8080` без схема се тълкува като схема → линкът се пропуска мълчаливо.
+- `seed-demo` при скрит `/demo` във Free org казва `plan_limit_profiles` вместо „exists".
