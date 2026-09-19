@@ -3,12 +3,15 @@ import { randomBytes } from 'node:crypto';
 import { db } from '@/modules/core';
 
 import { hashPassword, verifyPassword } from './password';
-import type { Admin } from './schema';
+import type { SessionUser } from './schema';
 import { findByEmailWithHash } from './user.repository';
+import type { User } from './user.schema';
 
-export interface AdminRecord extends Admin {
+export interface AccountRecord extends SessionUser {
   readonly passwordHash: string;
 }
+
+export type AdminRecord = AccountRecord;
 
 /**
  * Примамка за непознат имейл: сверява се срещу хеш на случайна парола, за да
@@ -27,8 +30,26 @@ export function decoyPasswordHash(): Promise<string> {
   return decoyHash;
 }
 
+// Изброено изрично: хешът е за входа, всичко друго от реда остава тук.
+function toAccountRecord(user: User): AccountRecord {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    passwordHash: user.passwordHash,
+  };
+}
+
+/** Всеки акаунт по имейл — за клиентския вход; ролята не се гледа. */
+export async function findAccountByEmail(
+  email: string,
+): Promise<AccountRecord | null> {
+  const user = await findByEmailWithHash(db, email);
+  return user === null ? null : toAccountRecord(user);
+}
+
 /**
- * Единственото място, което знае откъде идва акаунтът. Не-админът връща `null`
+ * Единственото място, което знае откъде идва админът. Не-админът връща `null`
  * като непознат имейл — минава по същия път, с примамката и същото съобщение.
  */
 export async function findAdminByEmail(
@@ -36,13 +57,7 @@ export async function findAdminByEmail(
 ): Promise<AdminRecord | null> {
   const user = await findByEmailWithHash(db, email);
   if (user === null || !user.isAdmin) return null;
-
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    passwordHash: user.passwordHash,
-  };
+  return toAccountRecord(user);
 }
 
 export { verifyPassword };

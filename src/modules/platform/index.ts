@@ -4,6 +4,7 @@ export { LINK_LABELS, linkHref } from './link-href';
 export {
   createPersonalOrganization,
   findPersonalOrganizationByOwner,
+  isOrgMember,
 } from './organization.repository';
 export { type Organization } from './organization.schema';
 export { can, type Feature } from './plan';
@@ -17,7 +18,9 @@ export {
 export {
   createProfile,
   findPublicProfileBySlug,
+  listProfiles,
   ProfileError,
+  type ProfileSummary,
 } from './profile.service';
 export { profileUrl } from './profile-url';
 export { renderQrSvg } from './qr';

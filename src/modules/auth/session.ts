@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 
 import { env, redis } from '@/modules/core';
 
-import type { Admin } from './schema';
+import type { SessionUser } from './schema';
 
 /**
  * Срокът на сесията — ЕДНОТО число, от което се четат TTL-ът в Redis и
@@ -16,17 +16,21 @@ import type { Admin } from './schema';
  */
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
-const COOKIE_NAME = 'admin_session';
+const COOKIE_NAME = 'session';
 
 const keyOf = (id: string) => `session:${id}`;
 
-export async function createSession(admin: Admin): Promise<void> {
+export async function createSession(user: SessionUser): Promise<void> {
   // 32 случайни байта — id-то е непредвидимо само по себе си, без подпис.
   const id = randomBytes(32).toString('base64url');
-
-  await redis.set(keyOf(id), JSON.stringify(admin), 'EX', SESSION_TTL_SECONDS);
-
   const store = await cookies();
+
+  // Повторен вход в същия браузър не оставя сирак — „Изход" трябва да затваря всичко.
+  const previous = store.get(COOKIE_NAME)?.value;
+  if (previous !== undefined) await redis.del(keyOf(previous));
+
+  await redis.set(keyOf(id), JSON.stringify(user), 'EX', SESSION_TTL_SECONDS);
+
   store.set(COOKIE_NAME, id, {
     httpOnly: true,
     sameSite: 'lax',
@@ -37,7 +41,7 @@ export async function createSession(admin: Admin): Promise<void> {
 }
 
 /** `null` и при липсваща cookie, и при недостъпен Redis — загубен Redis = изход. */
-export async function readSession(): Promise<Admin | null> {
+export async function readSession(): Promise<SessionUser | null> {
   const store = await cookies();
   const id = store.get(COOKIE_NAME)?.value;
   if (id === undefined) return null;
@@ -47,7 +51,7 @@ export async function readSession(): Promise<Admin | null> {
     if (raw === null) return null;
 
     await redis.expire(keyOf(id), SESSION_TTL_SECONDS);
-    return JSON.parse(raw) as Admin;
+    return JSON.parse(raw) as SessionUser;
   } catch {
     return null;
   }

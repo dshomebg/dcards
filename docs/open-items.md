@@ -6,7 +6,12 @@
 - Платежен доставчик — myPOS или Stripe; не блокира етапи 1–3.
 - Cloudflare API token — няма; DNS се пипа ръчно от собственика.
 - Webmail (Roundcube) за домейна — не е включен в Hestia; при нужда.
-- Rate limit на `/admin/login` (Redis) — преди първия прод деплой на админа.
+- Rate limit на `/admin/login`, `/login`, `/register` и Server Actions (Redis) — преди прод.
+- Потвърждение на имейл при регистрация (`email_verified_at` остава null) — отделен цикъл.
+- Първата admin Server Action трябва сама да вика `getCurrentAdmin()` (AUTH-7 — сваленият админ
+  държи жива сесия до твърд reload); admin страниците днес разчитат само на layout-а.
+- `@/modules/core` и `createUser` без `server-only` — ESLint правило срещу внасяне в `'use client'`.
+- Абсолютен таван на сесията остава (виж по-долу).
 - Пренесените коментари цитират задания на pagagal (`ADM-22`, `CAT-50`…) — да се изчистят.
 - Всяка бъдеща страница/Server Action с данни под `/admin` вика `getCurrentAdmin()` сама —
   layout-пазачът не се изпълнява при мека навигация (конвенция, не код сега).

@@ -2,12 +2,11 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { LogoutButton } from '@/components/logout-button';
 import { NavDrawer } from '@/components/nav/nav-drawer';
 import { Sidebar } from '@/components/nav/sidebar';
-import { getCurrentAdmin } from '@/modules/auth';
+import { getCurrentAdmin, signOut } from '@/modules/auth';
 import { env } from '@/modules/core';
-
-import { LogoutButton } from './logout-button';
 
 /**
  * Пазачът на админа. Проверката е СЪРВЪРНА: скрита в браузъра страница вече е
@@ -44,7 +43,7 @@ export default async function ProtectedLayout({
             <span className="text-text-muted hidden text-sm wide:inline">
               {admin.email}
             </span>
-            <LogoutButton />
+            <LogoutButton action={signOut} />
           </div>
         </header>
 

@@ -10,11 +10,11 @@ vi.mock('./session', () => session);
 vi.mock('./user.repository', () => repository);
 vi.mock('@/modules/core', () => ({ db: {} }));
 
-const { getCurrentAdmin } = await import('./current-admin');
+const { getCurrentUser } = await import('./current-user');
 
-const admin = { id: '0199-uuid', email: 'a@x.bg', name: 'A' };
+const user = { id: '0199-uuid', email: 'k@x.bg', name: 'K' };
 
-describe('getCurrentAdmin', () => {
+describe('getCurrentUser', () => {
   beforeEach(() => {
     session.readSession.mockReset();
     session.revokeSession.mockClear();
@@ -23,35 +23,28 @@ describe('getCurrentAdmin', () => {
 
   it('returns null without a session and never touches the database', async () => {
     session.readSession.mockResolvedValue(null);
-    await expect(getCurrentAdmin()).resolves.toBeNull();
+    await expect(getCurrentUser()).resolves.toBeNull();
     expect(repository.findById).not.toHaveBeenCalled();
   });
 
-  it('keeps the session while the user row is still an admin', async () => {
-    session.readSession.mockResolvedValue(admin);
-    repository.findById.mockResolvedValue({ ...admin, isAdmin: true });
-    await expect(getCurrentAdmin()).resolves.toEqual(admin);
+  it('returns the session while the row exists, admin or not', async () => {
+    session.readSession.mockResolvedValue(user);
+    repository.findById.mockResolvedValue({ ...user, isAdmin: false });
+    await expect(getCurrentUser()).resolves.toEqual(user);
     expect(session.revokeSession).not.toHaveBeenCalled();
   });
 
-  it('returns null for a non-admin row but keeps the shared session alive', async () => {
-    session.readSession.mockResolvedValue(admin);
-    repository.findById.mockResolvedValue({ ...admin, isAdmin: false });
-    await expect(getCurrentAdmin()).resolves.toBeNull();
-    expect(session.revokeSession).not.toHaveBeenCalled();
-  });
-
-  it('ends the session when the user row is gone', async () => {
-    session.readSession.mockResolvedValue(admin);
+  it('revokes the session when the user row is gone', async () => {
+    session.readSession.mockResolvedValue(user);
     repository.findById.mockResolvedValue(null);
-    await expect(getCurrentAdmin()).resolves.toBeNull();
+    await expect(getCurrentUser()).resolves.toBeNull();
     expect(session.revokeSession).toHaveBeenCalledTimes(1);
   });
 
   it('fails closed but keeps the session when the database is down', async () => {
-    session.readSession.mockResolvedValue(admin);
+    session.readSession.mockResolvedValue(user);
     repository.findById.mockRejectedValue(new Error('ECONNREFUSED'));
-    await expect(getCurrentAdmin()).resolves.toBeNull();
+    await expect(getCurrentUser()).resolves.toBeNull();
     expect(session.revokeSession).not.toHaveBeenCalled();
   });
 });

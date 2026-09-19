@@ -3,10 +3,15 @@
 import { useState, useTransition } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { signOut } from '@/modules/auth';
+import type { SignOutFailure } from '@/modules/auth';
 
-/** „Изход" — action-ът трие сесията и сам пренасочва; тук стига само отказът. */
-export function LogoutButton() {
+/**
+ * „Изход" — action-ът трие сесията и сам пренасочва; тук стига само отказът.
+ * Кой action е грижа на извикващия: админът подава `signOut`, `/app` — `signOutUser`.
+ */
+export function LogoutButton({
+  action,
+}: Readonly<{ action: () => Promise<SignOutFailure> }>) {
   const [busy, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +27,7 @@ export function LogoutButton() {
         disabled={busy}
         onClick={() => {
           startTransition(async () => {
-            const result = await signOut();
+            const result = await action();
             setError(result.message);
           });
         }}

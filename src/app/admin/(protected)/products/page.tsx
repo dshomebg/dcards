@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ComingSoon } from '../coming-soon';
+import { ComingSoon } from '@/components/coming-soon';
 
 export const metadata: Metadata = { title: 'Продукти' };
 

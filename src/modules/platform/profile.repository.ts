@@ -83,6 +83,18 @@ export async function findProfileBySlug(
   return rows[0] ?? null;
 }
 
+/** Всички профили на организацията по ред на създаване (`createdAt`, после `id`). */
+export function findProfilesByOrg(
+  executor: DbExecutor,
+  orgId: string,
+): Promise<Profile[]> {
+  return executor
+    .select()
+    .from(profiles)
+    .where(eq(profiles.orgId, orgId))
+    .orderBy(asc(profiles.createdAt), asc(profiles.id));
+}
+
 /** Само видимите, по `sortOrder`, после `id` (uuidv7 — редът на създаване). */
 export function findVisibleLinks(
   executor: DbExecutor,

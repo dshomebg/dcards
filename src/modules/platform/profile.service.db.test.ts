@@ -10,6 +10,7 @@ import { profileLinks, profiles } from './profile.schema';
 import {
   createProfile,
   findPublicProfileBySlug,
+  listProfiles,
   ProfileError,
 } from './profile.service';
 
@@ -234,6 +235,30 @@ describe('findPublicProfileBySlug', () => {
 
     const found = await findPublicProfileBySlug(db, 'broken-theme');
     expect(found?.theme.preset).toBe('light');
+  });
+});
+
+describe('listProfiles', () => {
+  it('returns only the organization profiles as summaries, oldest first', async () => {
+    const orgId = await proOrg();
+    const otherOrgId = await freeOrg();
+    await createProfile(db, { orgId, slug: 'list-one', ...base });
+    await createProfile(db, {
+      orgId,
+      slug: 'list-two',
+      ...base,
+      isPublic: false,
+    });
+    await createProfile(db, { orgId: otherOrgId, slug: 'list-other', ...base });
+
+    const list = await listProfiles(db, orgId);
+    expect(list.map((p) => [p.slug, p.isPublic])).toEqual([
+      ['list-one', true],
+      ['list-two', false],
+    ]);
+    expect(list[0]).not.toHaveProperty('theme');
+    expect(list[0]).not.toHaveProperty('orgId');
+    expect(await listProfiles(db, otherOrgId)).toHaveLength(1);
   });
 });
 

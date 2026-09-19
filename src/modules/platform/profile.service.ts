@@ -1,4 +1,4 @@
-// Създаване и публично четене на профил. Редакция/изтриване — PLT-4.
+// Създаване, списък и публично четене на профил. Редакция/изтриване — PLT-5.
 
 import { DrizzleQueryError } from 'drizzle-orm';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { can } from './plan';
 import {
   countProfilesByOrg,
   findProfileBySlug,
+  findProfilesByOrg,
   findVisibleLinks,
   insertProfile,
   insertProfileLinks,
@@ -45,7 +46,7 @@ const MESSAGES: Readonly<Record<ProfileErrorCode, string>> = {
   org_not_found: 'Организацията не съществува.',
 };
 
-/** `code` е за тестовете и редактора (PLT-4); `message` е за човека. */
+/** `code` е за тестовете и редактора (PLT-5); `message` е за човека. */
 export class ProfileError extends Error {
   constructor(readonly code: ProfileErrorCode) {
     super(MESSAGES[code]);
@@ -80,7 +81,7 @@ const DEFAULT_THEME: ProfileTheme = {
 };
 
 // Границите пазят публичната страница от неограничен HTML; сервизът се пази
-// сам, не чака извикващият (PLT-4) да валидира.
+// сам, не чака извикващият (PLT-5) да валидира.
 const text = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => text(max).nullish();
 
@@ -200,6 +201,32 @@ export async function createProfile(
       throw error;
     }
   });
+}
+
+/** Ред от списъка в `/app` — изрични полета, без тема и текстове (DAT-7). */
+export interface ProfileSummary {
+  readonly id: string;
+  readonly slug: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly isPublic: boolean;
+  readonly updatedAt: Date;
+}
+
+/** Профилите на организацията за собственика им; членството проверява извикващият. */
+export async function listProfiles(
+  executor: DbExecutor,
+  orgId: string,
+): Promise<ProfileSummary[]> {
+  const rows = await findProfilesByOrg(executor, orgId);
+  return rows.map((profile) => ({
+    id: profile.id,
+    slug: profile.slug,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    isPublic: profile.isPublic,
+    updatedAt: profile.updatedAt,
+  }));
 }
 
 /** `null` и за непознат, и за скрит профил — страницата не различава двата случая. */

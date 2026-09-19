@@ -4,7 +4,10 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { db } from '@/modules/core';
 
 import { users } from '../auth/user.schema';
-import { createPersonalOrganization } from './organization.repository';
+import {
+  createPersonalOrganization,
+  isOrgMember,
+} from './organization.repository';
 import { organizations, orgMembers } from './organization.schema';
 
 afterAll(async () => {
@@ -75,5 +78,22 @@ describe('createPersonalOrganization', () => {
     ).rejects.toSatisfy((error: Error) =>
       String(error.cause).includes('organizations_owner_user_id_users_id_fk'),
     );
+  });
+});
+
+describe('isOrgMember', () => {
+  it('is true for the owner and false for a stranger or an unknown org', async () => {
+    const ownerId = await insertUser('member-owner@example.bg');
+    const strangerId = await insertUser('stranger@example.bg');
+    const org = await createPersonalOrganization(db, {
+      ownerUserId: ownerId,
+      name: 'M',
+    });
+
+    expect(await isOrgMember(db, org.id, ownerId)).toBe(true);
+    expect(await isOrgMember(db, org.id, strangerId)).toBe(false);
+    expect(
+      await isOrgMember(db, '00000000-0000-7000-8000-000000000000', ownerId),
+    ).toBe(false);
   });
 });

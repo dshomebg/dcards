@@ -1,4 +1,4 @@
-/** Екран „предстои" — едно място за седемте подсекции без съдържание. */
+/** Екран „предстои" — едно място за заглушките в админа и в `/app`. */
 export function ComingSoon({ title }: Readonly<{ title: string }>) {
   return (
     <main className="flex flex-col gap-2 px-6 py-10">

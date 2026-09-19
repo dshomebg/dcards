@@ -64,3 +64,17 @@ export async function findPersonalOrganizationByOwner(
     .limit(1);
   return rows[0] ?? null;
 }
+
+/** Членство по PK на `org_members` — проверката за AUTH-2 във всяка Server Action. */
+export async function isOrgMember(
+  executor: DbExecutor,
+  orgId: string,
+  userId: string,
+): Promise<boolean> {
+  const rows = await executor
+    .select({ orgId: orgMembers.orgId })
+    .from(orgMembers)
+    .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.userId, userId)))
+    .limit(1);
+  return rows.length > 0;
+}
