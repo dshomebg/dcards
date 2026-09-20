@@ -68,6 +68,7 @@ export {
   type AdminOrderDto,
   type AdminOrderSummaryDto,
   CARD_EDITABLE_STATUSES,
+  countOpenOrders,
   getOrderForAdmin,
   listOrdersForAdmin,
   lockOrderForCards,
@@ -94,6 +95,7 @@ export {
   type ShippedMailInput,
   type ShippedMailOptions,
 } from './order-shipped-mail';
+export { countActiveProducts } from './product.repository';
 export {
   PRODUCT_MATERIALS,
   PRODUCT_SLUG_PATTERN,

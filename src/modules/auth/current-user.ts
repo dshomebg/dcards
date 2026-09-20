@@ -3,7 +3,7 @@ import { db } from '@/modules/core';
 import type { SessionUser } from './schema';
 import { readSession, revokeSession } from './session';
 import { findById } from './user.repository';
-import type { User } from './user.schema';
+import { type PublicUser, toPublicUser, type User } from './user.schema';
 
 export interface CurrentRow {
   readonly session: SessionUser;
@@ -42,4 +42,10 @@ export async function loadCurrentRow(): Promise<CurrentRow | null> {
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const current = await loadCurrentRow();
   return current?.session ?? null;
+}
+
+/** Публичният ред (с `emailVerifiedAt`) — за екрани, на които сесията не стига. */
+export async function getCurrentPublicUser(): Promise<PublicUser | null> {
+  const current = await loadCurrentRow();
+  return current === null ? null : toPublicUser(current.user);
 }

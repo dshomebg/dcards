@@ -16,6 +16,8 @@ export const RATE_POLICY = {
   // По-строг от общия таван: сесия в чужди ръце не бива да познава текущата
   // парола с 60 опита/мин.
   passwordChangeUser: { limit: 5, windowSec: 900 },
+  // Всяко „Изпрати отново" е писмо към чужд SMTP — 3/час стигат на реален човек.
+  verifyResendUser: { limit: 3, windowSec: 3600 },
   apiIp: { limit: 60, windowSec: 60 },
   // Claim с 6-цифрен код: 5/час на карта прави отгатването безнадеждно;
   // 10/час на потребител спира обхождане на много карти от един акаунт.
@@ -23,6 +25,8 @@ export const RATE_POLICY = {
   claimCard: { limit: 5, windowSec: 3600 },
   // Записите в `scans` са без auth — таван по карта над всяко реално сканиране.
   scanCard: { limit: 30, windowSec: 60 },
+  // QR/линк записите на `/{slug}` — същият таван, ключ по профил.
+  scanProfile: { limit: 30, windowSec: 60 },
   // Количката е без auth — таван по IP над всяко реално пазаруване.
   cartIp: { limit: 60, windowSec: 60 },
   // Нова количка = нов Redis ключ с TTL 7 дни без auth — реален гост прави една.
@@ -41,10 +45,12 @@ export const rateKey = {
   registerIp: (ip: string) => `rl:register:ip:${ip}`,
   actionUser: (userId: string) => `rl:action:user:${userId}`,
   passwordChangeUser: (userId: string) => `rl:password:user:${userId}`,
+  verifyResendUser: (userId: string) => `rl:verify-resend:user:${userId}`,
   apiIp: (ip: string) => `rl:api:ip:${ip}`,
   claimUser: (userId: string) => `rl:claim:user:${userId}`,
   claimCard: (cardId: string) => `rl:claim:card:${cardId}`,
   scanCard: (cardId: string) => `rl:scan:card:${cardId}`,
+  scanProfile: (profileId: string) => `rl:scan:profile:${profileId}`,
   cartIp: (ip: string) => `rl:cart:ip:${ip}`,
   cartNewIp: (ip: string) => `rl:cart-new:ip:${ip}`,
   checkoutIp: (ip: string) => `rl:checkout:ip:${ip}`,

@@ -132,3 +132,15 @@ export function findCardsByOrder(
     .where(eq(cards.orderId, orderId))
     .orderBy(asc(cards.id));
 }
+
+/** За админ таблото: свободните (`written`) карти в склада. */
+export async function countCardsByStatus(
+  executor: DbExecutor,
+  status: CardStatus,
+): Promise<number> {
+  const rows = await executor
+    .select({ total: count() })
+    .from(cards)
+    .where(eq(cards.status, status));
+  return rows[0]?.total ?? 0;
+}

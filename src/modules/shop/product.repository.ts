@@ -223,3 +223,13 @@ export async function deleteProductById(
     .returning({ id: products.id });
   return rows.length > 0;
 }
+
+export async function countActiveProducts(
+  executor: DbExecutor,
+): Promise<number> {
+  const rows = await executor
+    .select({ total: count() })
+    .from(products)
+    .where(eq(products.isActive, true));
+  return rows[0]?.total ?? 0;
+}

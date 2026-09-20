@@ -204,7 +204,7 @@ describe('assign / unassign / disable', () => {
 describe('activateFromChipAction', () => {
   it('activates in the session org and redirects to the profile', async () => {
     await expect(activateFromChipAction('abcd2345', PROFILE)).rejects.toThrow(
-      'REDIRECT:/ivan',
+      'REDIRECT:/c/ABCD2345',
     );
     expect(platform.activateCard).toHaveBeenCalledWith(
       {},

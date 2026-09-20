@@ -167,6 +167,7 @@ export async function activateFromChipAction(
       }),
   );
   if (!result.ok) return result;
-  // `redirect` хвърля — стои извън `try` (в `runCardAction`).
-  redirect(`/${result.value.slug}`);
+  // `redirect` хвърля — стои извън `try`. През `/c/{id}`, не право към профила:
+  // така първото отваряне е „чип", а не „линк" в статистиката.
+  redirect(`/c/${id.data}`);
 }

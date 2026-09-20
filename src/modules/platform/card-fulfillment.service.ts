@@ -12,6 +12,7 @@ import {
   assignCardsToOrder,
   attachOrgToOrderCards,
   countCardsByOrder,
+  countCardsByStatus,
   findCardsByOrder,
   lockWrittenCardsByBatch,
   releaseCard,
@@ -103,3 +104,6 @@ export function listCardsByOrder(
 ): Promise<OrderCardDto[]> {
   return findCardsByOrder(executor, orderId);
 }
+
+export const countAvailableCards = (executor: DbExecutor): Promise<number> =>
+  countCardsByStatus(executor, 'written');

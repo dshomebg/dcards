@@ -1,6 +1,6 @@
 // Достъп до `users` — единственото място в модула, което пише SQL.
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 
 import type { DbExecutor } from '@/modules/core';
 
@@ -61,6 +61,23 @@ export async function updatePasswordHash(
     .update(users)
     .set({ passwordHash })
     .where(eq(users.id, userId))
+    .returning({ id: users.id });
+
+  return rows.length > 0;
+}
+
+/**
+ * Само първото потвърждение записва дата — `true` при промяна. `false` означава
+ * „вече потвърден" или „няма такъв ред"; извикващият ги различава с `findById`.
+ */
+export async function markEmailVerified(
+  executor: DbExecutor,
+  userId: string,
+): Promise<boolean> {
+  const rows = await executor
+    .update(users)
+    .set({ emailVerifiedAt: sql`now()` })
+    .where(and(eq(users.id, userId), isNull(users.emailVerifiedAt)))
     .returning({ id: users.id });
 
   return rows.length > 0;

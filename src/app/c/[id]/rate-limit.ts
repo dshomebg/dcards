@@ -11,7 +11,7 @@ export async function cardRouteLimited(headers: Headers): Promise<boolean> {
   return !result.allowed;
 }
 
-/** Таван на записите в `scans` по карта — при превишаване се пренасочва без запис. */
+/** Таван на записите в `scans` по карта — при превишаване (или паднал Redis) без запис. */
 export async function scanRecordLimited(cardId: string): Promise<boolean> {
   const { limit, windowSec } = RATE_POLICY.scanCard;
   const result = await rateLimit.consume(
@@ -19,5 +19,5 @@ export async function scanRecordLimited(cardId: string): Promise<boolean> {
     limit,
     windowSec,
   );
-  return !result.allowed;
+  return !result.allowed || result.degraded === true;
 }

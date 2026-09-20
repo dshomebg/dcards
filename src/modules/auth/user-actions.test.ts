@@ -22,7 +22,14 @@ const rateLimit = vi.hoisted(() => ({
   consume: vi.fn(() => Promise.resolve({ allowed: true, retryAfterSec: 0 })),
 }));
 
+const verification = vi.hoisted(() => ({
+  issueVerificationUrl: vi.fn<
+    (userId: string, appUrl: string) => Promise<string | null>
+  >(() => Promise.resolve('http://localhost:3100/verify-email?token=TOKEN')),
+}));
+
 vi.mock('./session', () => session);
+vi.mock('./email-verification', () => verification);
 vi.mock('./user.repository', () => repository);
 vi.mock('./registration', () => registration);
 vi.mock('next/navigation', () => ({
@@ -35,12 +42,17 @@ vi.mock('next/headers', () => ({
 }));
 // `client.ts` отваря пул при импорт — тук база няма; репозиторият е мокиран.
 // Политиката и IP helper-ът са истински, за да се проверяват реалните ключове.
+const mail = vi.hoisted(() => ({ sendMail: vi.fn().mockResolvedValue(true) }));
 vi.mock('@/modules/core', async () => ({
   db: {},
   rateLimit,
+  env: () => ({ APP_NAME: 'DCARDS', APP_URL: 'http://localhost:3100' }),
+  sendMail: mail.sendMail,
   ...(await vi.importActual('@/modules/core/rate-limit/policy')),
   ...(await vi.importActual('@/modules/core/rate-limit/client-ip')),
 }));
+// `after` изпълнява веднага — писмото се проверява като част от action-а.
+vi.mock('next/server', () => ({ after: (fn: () => Promise<void>) => fn() }));
 vi.mock('argon2', async (importOriginal) => {
   const actual = await importOriginal<typeof Argon2>();
   verifySpy.mockImplementation(actual.verify);
@@ -269,11 +281,43 @@ describe('register', () => {
     });
 
     await expect(register(valid)).rejects.toThrow('REDIRECT:/app');
+    expect(mail.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'k@x.bg',
+        subject: 'Добре дошли в DCARDS',
+        text: expect.stringContaining(
+          'http://localhost:3100/verify-email?token=TOKEN',
+        ) as string,
+      }),
+    );
+    expect(verification.issueVerificationUrl).toHaveBeenCalledWith(
+      MEMBER_ID,
+      'http://localhost:3100',
+    );
     expect(session.createSession).toHaveBeenCalledWith({
       id: MEMBER_ID,
       email: 'k@x.bg',
       name: 'Кирил',
     });
+  });
+
+  it('still sends the welcome mail without a link when Redis is down', async () => {
+    registration.registerAccount.mockResolvedValue({
+      status: 'created',
+      user: {
+        id: MEMBER_ID,
+        email: 'k@x.bg',
+        name: 'Кирил',
+        emailVerifiedAt: null,
+        isAdmin: false,
+        createdAt: new Date(),
+      },
+    });
+    verification.issueVerificationUrl.mockResolvedValueOnce(null);
+
+    await expect(register(valid)).rejects.toThrow('REDIRECT:/app');
+    const sent = mail.sendMail.mock.calls.at(-1)?.[0] as { text: string };
+    expect(sent.text).not.toContain('verify-email');
   });
 
   it('follows a safe next path after registration', async () => {

@@ -28,6 +28,13 @@ describe('rateKey.passwordChangeUser', () => {
   });
 });
 
+describe('verify resend policy', () => {
+  it('keys the resend per user at 3 an hour', () => {
+    expect(rateKey.verifyResendUser('u1')).toBe('rl:verify-resend:user:u1');
+    expect(RATE_POLICY.verifyResendUser).toEqual({ limit: 3, windowSec: 3600 });
+  });
+});
+
 describe('claim policy', () => {
   it('keys the claim per user and per card', () => {
     expect(rateKey.claimUser('u1')).toBe('rl:claim:user:u1');
@@ -59,5 +66,14 @@ describe('checkout policy', () => {
     );
     expect(RATE_POLICY.checkoutIp).toEqual({ limit: 5, windowSec: 3600 });
     expect(RATE_POLICY.checkoutEmail).toEqual({ limit: 3, windowSec: 3600 });
+  });
+});
+
+describe('scan policy', () => {
+  it('keys the public scan records per card and per profile at 30 a minute', () => {
+    expect(rateKey.scanCard('ABCD2345')).toBe('rl:scan:card:ABCD2345');
+    expect(rateKey.scanProfile('p1')).toBe('rl:scan:profile:p1');
+    expect(RATE_POLICY.scanCard).toEqual({ limit: 30, windowSec: 60 });
+    expect(RATE_POLICY.scanProfile).toEqual({ limit: 30, windowSec: 60 });
   });
 });

@@ -1,6 +1,6 @@
 // Достъп до `organizations` и `org_members` — единственото място в модула със SQL.
 
-import { and, eq } from 'drizzle-orm';
+import { and, count, eq } from 'drizzle-orm';
 
 import type { DbExecutor } from '@/modules/core';
 
@@ -77,4 +77,11 @@ export async function isOrgMember(
     .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.userId, userId)))
     .limit(1);
   return rows.length > 0;
+}
+
+export async function countOrganizations(
+  executor: DbExecutor,
+): Promise<number> {
+  const rows = await executor.select({ total: count() }).from(organizations);
+  return rows[0]?.total ?? 0;
 }

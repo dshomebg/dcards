@@ -2,12 +2,17 @@
 
 import type { DbExecutor } from '@/modules/core';
 
+import {
+  consumeVerificationToken,
+  readVerificationToken,
+} from './email-verification';
 import { hashPassword, verifyPassword } from './password';
 import { type ChangePasswordInput, changePasswordInputSchema } from './schema';
 import {
   findByEmailWithHash,
   findById,
   insert,
+  markEmailVerified,
   updatePasswordHash,
 } from './user.repository';
 import { type PublicUser, toPublicUser } from './user.schema';
@@ -43,6 +48,14 @@ export async function findUserByEmail(
   return user === null ? null : toPublicUser(user);
 }
 
+export async function findUserById(
+  executor: DbExecutor,
+  id: string,
+): Promise<PublicUser | null> {
+  const user = await findById(executor, id);
+  return user === null ? null : toPublicUser(user);
+}
+
 export type ChangePasswordResult = 'ok' | 'wrong_current' | 'not_found';
 
 /**
@@ -70,4 +83,32 @@ export async function changePassword(
     await hashPassword(newPassword),
   );
   return updated ? 'ok' : 'not_found';
+}
+
+export type VerifyEmailResult = 'verified' | 'already' | 'invalid';
+
+/**
+ * Токенът се трие след записа, не преди — инак паднала база между двете го
+ * изгаря без резултат. Редис проблемите са `invalid`; базата хвърля нагоре.
+ */
+export async function verifyEmailByToken(
+  executor: DbExecutor,
+  token: unknown,
+): Promise<VerifyEmailResult> {
+  if (typeof token !== 'string') return 'invalid';
+  const userId = await readVerificationToken(token);
+  if (userId === null) return 'invalid';
+
+  let result: VerifyEmailResult;
+  if (await markEmailVerified(executor, userId)) {
+    result = 'verified';
+  } else {
+    result =
+      (await findById(executor, userId)) === null ? 'invalid' : 'already';
+  }
+
+  if (result !== 'invalid') {
+    await consumeVerificationToken(token, userId);
+  }
+  return result;
 }

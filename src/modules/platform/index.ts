@@ -38,6 +38,7 @@ export {
   assignCardsFromBatch,
   type AssignCardsFromBatchInput,
   attachOrderCardsToOrg,
+  countAvailableCards,
   listCardsByOrder,
   type OrderCardDto,
   releaseOrderCard,
@@ -54,6 +55,7 @@ export { type CardRoute, resolveCard } from './card-router';
 export { cardUrl } from './card-url';
 export { LINK_LABELS, linkHref } from './link-href';
 export {
+  countOrganizations,
   createPersonalOrganization,
   findPersonalOrganizationByOwner,
   isOrgMember,
@@ -70,12 +72,14 @@ export {
 export {
   createProfile,
   findPublicProfileBySlug,
+  findPublicProfileRecordBySlug,
   listProfiles,
   ProfileError,
   profileLinkInputSchema,
   profileLinksInputSchema,
   type ProfileSummary,
   profileThemeSchema,
+  type PublicProfileRecord,
   updateProfileInputSchema,
 } from './profile.service';
 export {
@@ -95,6 +99,14 @@ export {
   type ScanDevice,
   type ScanSource,
 } from './scan.schema';
-export { classifyDevice } from './scan-device';
+export {
+  type FreeScanAnalytics,
+  getScanAnalytics,
+  type ProScanAnalytics,
+  type ScanAnalytics,
+} from './scan-analytics.service';
+export { type DayCount, localDay } from './scan-days';
+export { classifyDevice, isBot } from './scan-device';
+export { logScanFailure } from './scan-log';
 export { RESERVED_SLUGS, slugSchema } from './slug';
 export { buildVCard, vcardContentDisposition } from './vcard';

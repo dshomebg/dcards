@@ -31,7 +31,10 @@ export async function GET(req: Request, ctx: Context): Promise<Response> {
   const profile = await findPublicProfileBySlug(db, slug);
   if (profile === null) return notFound();
 
-  const svg = await renderQrSvg(profileUrl(env().APP_URL, profile.slug));
+  // `?s=qr` отличава QR от директния линк в статистиката; `profileUrl` остава чист.
+  const svg = await renderQrSvg(
+    `${profileUrl(env().APP_URL, profile.slug)}?s=qr`,
+  );
   return new Response(svg, {
     status: 200,
     headers: {

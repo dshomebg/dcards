@@ -9,6 +9,7 @@ const ITEMS = [
   { href: '/app', label: 'Профили' },
   { href: '/app/cards', label: 'Карти' },
   { href: '/app/orders', label: 'Поръчки' },
+  { href: '/app/analytics', label: 'Статистика' },
   { href: '/app/settings', label: 'Настройки' },
 ] as const;
 

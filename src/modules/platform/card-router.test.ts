@@ -46,6 +46,7 @@ describe('resolveCard', () => {
       kind: 'redirect',
       cardId: 'ABCD2345',
       profileId: PROFILE,
+      orgId: ORG,
       slug: 'ivan',
     });
   });

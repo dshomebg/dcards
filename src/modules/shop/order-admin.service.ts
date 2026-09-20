@@ -7,6 +7,7 @@ import { z } from 'zod';
 import type { DbExecutor } from '@/modules/core';
 
 import {
+  countOrdersByStatuses,
   findOrderById,
   findOrderItemsByOrder,
   findOrdersForAdmin,
@@ -251,3 +252,7 @@ export async function lockOrderForCards(
     quota: items.reduce((sum, item) => sum + item.quantity, 0),
   };
 }
+
+/** Поръчки, които чакат работа: всичко преди `shipped`. */
+export const countOpenOrders = (executor: DbExecutor): Promise<number> =>
+  countOrdersByStatuses(executor, ['new', 'cod', 'paid', 'in_production']);

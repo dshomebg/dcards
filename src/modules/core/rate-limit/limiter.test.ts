@@ -85,6 +85,7 @@ describe('createLimiter', () => {
     await expect(limiter.consume('k', 1, 60)).resolves.toEqual({
       allowed: true,
       retryAfterSec: 0,
+      degraded: true,
     });
     expect(error).toHaveBeenCalledWith(
       'rate-limit: store unavailable',
@@ -100,7 +101,11 @@ describe('createLimiter', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const pending = createLimiter(hanging).consume('rl:x', 1, 60);
     await vi.advanceTimersByTimeAsync(300);
-    await expect(pending).resolves.toEqual({ allowed: true, retryAfterSec: 0 });
+    await expect(pending).resolves.toEqual({
+      allowed: true,
+      retryAfterSec: 0,
+      degraded: true,
+    });
     expect(spy).toHaveBeenCalledOnce();
     spy.mockRestore();
     vi.useRealTimers();

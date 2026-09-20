@@ -237,27 +237,46 @@ export async function listProfiles(
   }));
 }
 
+/** Публичният DTO плюс ключовете за записа в `scans` — само за сървъра, не за клиента. */
+export interface PublicProfileRecord {
+  readonly id: string;
+  readonly orgId: string;
+  readonly profile: PublicProfile;
+}
+
 /** `null` и за непознат, и за скрит профил — страницата не различава двата случая. */
-export async function findPublicProfileBySlug(
+export async function findPublicProfileRecordBySlug(
   executor: DbExecutor,
   slug: string,
-): Promise<PublicProfile | null> {
+): Promise<PublicProfileRecord | null> {
   const profile = await findProfileBySlug(executor, slug);
   if (profile === null || !profile.isPublic) return null;
 
   const links = await findVisibleLinks(executor, profile.id);
   return {
-    slug: profile.slug,
-    firstName: profile.firstName,
-    lastName: profile.lastName,
-    title: profile.title,
-    company: profile.company,
-    bio: profile.bio,
-    theme: safeTheme(profile.theme),
-    links: links.map((link) => ({
-      type: link.type,
-      label: link.label,
-      value: link.value,
-    })),
+    id: profile.id,
+    orgId: profile.orgId,
+    profile: {
+      slug: profile.slug,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      title: profile.title,
+      company: profile.company,
+      bio: profile.bio,
+      theme: safeTheme(profile.theme),
+      links: links.map((link) => ({
+        type: link.type,
+        label: link.label,
+        value: link.value,
+      })),
+    },
   };
+}
+
+export async function findPublicProfileBySlug(
+  executor: DbExecutor,
+  slug: string,
+): Promise<PublicProfile | null> {
+  const record = await findPublicProfileRecordBySlug(executor, slug);
+  return record === null ? null : record.profile;
 }

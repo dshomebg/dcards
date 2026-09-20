@@ -2,15 +2,18 @@
 
 import { DrizzleQueryError } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 
-import { db } from '@/modules/core';
+import { db, env, sendMail } from '@/modules/core';
 
+import { welcomeMail } from './account-mail';
 import type { SignInFailure, SignOutFailure } from './actions';
 import {
   decoyPasswordHash,
   findAccountByEmail,
   verifyPassword,
 } from './admin-account';
+import { issueVerificationUrl } from './email-verification';
 import { loginRateLimit, registerRateLimit } from './login-limit';
 import { registerAccount, type RegisterResult } from './registration';
 import {
@@ -118,6 +121,19 @@ export async function register(
   if (result.status === 'email_taken') {
     return { ok: false, message: 'Този имейл вече е регистриран.' };
   }
+
+  // След отговора: писмото не бива да държи регистрацията; `sendMail` не хвърля,
+  // а паднал Redis дава писмо без линк (AUTH-12).
+  after(async () => {
+    const { APP_NAME, APP_URL } = env();
+    const verifyUrl = await issueVerificationUrl(result.user.id, APP_URL);
+    const mail = welcomeMail(result.user.name, {
+      appName: APP_NAME,
+      appUrl: APP_URL,
+      verifyUrl: verifyUrl ?? undefined,
+    });
+    await sendMail({ to: result.user.email, ...mail });
+  });
 
   let opened: boolean;
   try {

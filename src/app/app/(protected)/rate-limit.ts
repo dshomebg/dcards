@@ -30,6 +30,19 @@ export async function passwordChangeLimit(
   return result.allowed ? null : tooManyMessage(result.retryAfterSec);
 }
 
+/** „Изпрати отново" за имейла: 3/час по потребител, брои се и успешното (AUTH-12). */
+export async function verifyResendLimit(
+  userId: string,
+): Promise<string | null> {
+  const { limit, windowSec } = RATE_POLICY.verifyResendUser;
+  const result = await rateLimit.consume(
+    rateKey.verifyResendUser(userId),
+    limit,
+    windowSec,
+  );
+  return result.allowed ? null : tooManyMessage(result.retryAfterSec);
+}
+
 /**
  * Claim с код: и по потребител, и по карта — брои се всеки опит, и успешният.
  * 5/час на карта прави 6-те цифри непреодолими (AUTH-9). `null` = минава.

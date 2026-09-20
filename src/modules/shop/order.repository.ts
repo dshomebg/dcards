@@ -1,7 +1,7 @@
 // Достъп до `orders` и `order_items` плюс заключването и намаляването на
 // наличност по варианти — единственият SQL за поръчките.
 
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import type { DbExecutor } from '@/modules/core';
 
@@ -250,4 +250,15 @@ export async function incrementVariantStock(
     .update(productVariants)
     .set({ stock: sql`${productVariants.stock} + ${quantity}` })
     .where(eq(productVariants.id, variantId));
+}
+
+export async function countOrdersByStatuses(
+  executor: DbExecutor,
+  statuses: readonly OrderStatus[],
+): Promise<number> {
+  const rows = await executor
+    .select({ total: count() })
+    .from(orders)
+    .where(inArray(orders.status, [...statuses]));
+  return rows[0]?.total ?? 0;
 }

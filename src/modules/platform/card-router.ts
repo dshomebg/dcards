@@ -20,6 +20,7 @@ export type CardRoute =
       readonly kind: 'redirect';
       readonly cardId: string;
       readonly profileId: string;
+      readonly orgId: string | null;
       readonly slug: string;
     }
   | {
@@ -43,6 +44,7 @@ export function resolveCard(row: CardRouteRow | null): CardRoute {
       kind: 'redirect',
       cardId: row.id,
       profileId: row.profileId,
+      orgId: row.orgId,
       slug: row.profileSlug,
     };
   }

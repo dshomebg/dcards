@@ -2,7 +2,12 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/modules/core';
 
-import { findByEmailWithHash, insert } from './user.repository';
+import {
+  findByEmailWithHash,
+  findById,
+  insert,
+  markEmailVerified,
+} from './user.repository';
 
 afterAll(async () => {
   await db.$client.end({ timeout: 5 });
@@ -40,5 +45,26 @@ describe('user.repository', () => {
     ).rejects.toSatisfy((error: Error) =>
       String(error.cause).includes('users_email_lower_idx'),
     );
+  });
+
+  it('marks the email verified once and keeps the first date', async () => {
+    const created = await insert(db, {
+      email: 'verify@example.bg',
+      passwordHash: 'h',
+      name: 'V',
+    });
+
+    expect(await markEmailVerified(db, created.id)).toBe(true);
+    const first = (await findById(db, created.id))?.emailVerifiedAt;
+    expect(first).toBeInstanceOf(Date);
+
+    expect(await markEmailVerified(db, created.id)).toBe(false);
+    expect((await findById(db, created.id))?.emailVerifiedAt).toEqual(first);
+  });
+
+  it('reports false for an unknown user', async () => {
+    expect(
+      await markEmailVerified(db, '019969a0-0000-7000-8000-0000000000ff'),
+    ).toBe(false);
   });
 });

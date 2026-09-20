@@ -8,6 +8,8 @@ export type RateLimitStore = Pick<Redis, 'incr' | 'expire' | 'ttl'>;
 export interface RateLimitResult {
   readonly allowed: boolean;
   readonly retryAfterSec: number;
+  /** Redis е недостъпен — пуснато fail-open; записи без auth го третират като отказ. */
+  readonly degraded?: boolean;
 }
 
 export interface RateLimiter {
@@ -61,7 +63,8 @@ export function createLimiter(store: RateLimitStore): RateLimiter {
         return await withTimeout(count(store, key, limit, windowSec));
       } catch (cause) {
         console.error('rate-limit: store unavailable', cause);
-        return ALLOWED;
+        // `degraded`: който пише в базата без auth (сканове), спира; входът минава.
+        return { ...ALLOWED, degraded: true };
       }
     },
   };

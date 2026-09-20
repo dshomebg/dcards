@@ -1,5 +1,5 @@
-// Сканирания на карти (zadanie § 5.4): кой чип, кога, откъде, на какво
-// устройство. Без IP и без суров UA — статистиката не иска лични данни.
+// Сканирания (zadanie § 5.4): чип, QR или директен линк — кога, откъде, на
+// какво устройство. Без IP и без суров UA — статистиката не иска лични данни.
 
 import { sql } from 'drizzle-orm';
 import {
@@ -14,6 +14,7 @@ import {
 
 import { primaryId } from '../core/db/columns';
 import { cards } from './card.schema';
+import { organizations } from './organization.schema';
 import { profiles } from './profile.schema';
 
 export const SCAN_SOURCES = ['nfc', 'qr', 'direct'] as const;
@@ -26,16 +27,22 @@ export const scanDeviceEnum = pgEnum('scan_device', SCAN_DEVICES);
 
 // `sql.raw` — иначе drizzle-kit оставя `$1` в миграцията вместо литерал.
 const COUNTRY_PATTERN_SQL = sql.raw(`'^[A-Z]{2}$'`);
+const NFC_SQL = sql.raw(`'nfc'`);
 
 export const scans = pgTable(
   'scans',
   {
     id: primaryId(),
-    cardId: text('card_id')
-      .notNull()
-      .references(() => cards.id, { onDelete: 'restrict' }),
+    // Само чипът има карта; QR и линкът стигат до профила без нея.
+    cardId: text('card_id').references(() => cards.id, {
+      onDelete: 'restrict',
+    }),
     // Изтрит профил оставя сканирането — историята на картата е нейна.
     profileId: uuid('profile_id').references(() => profiles.id, {
+      onDelete: 'set null',
+    }),
+    // Org-ът се фиксира в момента на скана: препродадена карта не носи чужда история.
+    orgId: uuid('org_id').references(() => organizations.id, {
       onDelete: 'set null',
     }),
     scannedAt: timestamp('scanned_at', { withTimezone: true, mode: 'date' })
@@ -49,9 +56,14 @@ export const scans = pgTable(
   (table) => [
     index('scans_card_time_idx').on(table.cardId, table.scannedAt),
     index('scans_profile_time_idx').on(table.profileId, table.scannedAt),
+    index('scans_org_time_idx').on(table.orgId, table.scannedAt),
     check(
       'scans_country_format',
       sql`${table.country} ~ ${COUNTRY_PATTERN_SQL}`,
+    ),
+    check(
+      'scans_source_card',
+      sql`(${table.source} = ${NFC_SQL}) = (${table.cardId} IS NOT NULL)`,
     ),
   ],
 );

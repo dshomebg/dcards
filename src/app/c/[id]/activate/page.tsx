@@ -1,7 +1,6 @@
-// Маршрутизаторът на чипа: `/c/{id}`, публичен, без auth. Активна карта →
-// 307 към профила и ред в `scans`; записана → екран за активация.
+// Служебните екрани на чипа: `/c/{id}/activate`. Route handler-ът `/c/{id}`
+// праща тук всичко освен активната карта (тя отива право към профила).
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import Link from 'next/link';
@@ -13,15 +12,13 @@ import { buttonStyles } from '@/components/ui/button';
 import { db } from '@/modules/core';
 import {
   cardIdSchema,
-  classifyDevice,
   findCardForRoute,
-  insertScan,
   listProfiles,
   resolveCard,
 } from '@/modules/platform';
 
+import { cardRouteLimited } from '../rate-limit';
 import { ActivateForm } from './activate-form';
-import { cardRouteLimited, scanRecordLimited } from './rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,15 +42,6 @@ function Screen({
       </div>
     </main>
   );
-}
-
-function logScanFailure(error: unknown): void {
-  // Само код и constraint — pg `detail` носи целия ред (DAT-6).
-  const cause =
-    error instanceof DrizzleQueryError
-      ? (error.cause as { code?: string; constraint?: string } | undefined)
-      : undefined;
-  console.error('/c: scan insert failed', cause?.code, cause?.constraint);
 }
 
 async function ActivateScreen({
@@ -109,7 +97,7 @@ async function ActivateScreen({
   );
 }
 
-export default async function CardPage(props: Props) {
+export default async function ActivatePage(props: Props) {
   // Лимитът е ПРЕДИ всякаква заявка — отказаният опит не струва нищо.
   const requestHeaders = await headers();
   if (await cardRouteLimited(requestHeaders)) {
@@ -127,23 +115,8 @@ export default async function CardPage(props: Props) {
   const route = resolveCard(await findCardForRoute(db, parsed.data));
   if (route.kind === 'not_found') notFound();
 
-  if (route.kind === 'redirect') {
-    try {
-      if (!(await scanRecordLimited(route.cardId))) {
-        await insertScan(db, {
-          cardId: route.cardId,
-          profileId: route.profileId,
-          source: 'nfc',
-          device: classifyDevice(requestHeaders.get('user-agent')),
-          country: null,
-        });
-      }
-    } catch (error) {
-      logScanFailure(error);
-    }
-    // `redirect` хвърля — стои извън `try`. 307: профилът се сменя от dashboard-а.
-    redirect(`/${route.slug}`);
-  }
+  // Активна карта няма служебен екран — през `/c/{id}`, за да се запише сканът.
+  if (route.kind === 'redirect') redirect(`/c/${route.cardId}`);
 
   if (route.kind === 'inactive') {
     return (

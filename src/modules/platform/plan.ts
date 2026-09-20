@@ -51,8 +51,13 @@ export function effectivePlan(
 }
 
 /** Числов лимит: може ли още едно при `used` вече заети. Булев: както е в таблицата. */
-export function can(org: PlanFields, feature: Feature, used = 0): boolean {
-  const limit = PLAN_LIMITS[effectivePlan(org)][feature];
+export function can(
+  org: PlanFields,
+  feature: Feature,
+  used = 0,
+  now = new Date(),
+): boolean {
+  const limit = PLAN_LIMITS[effectivePlan(org, now)][feature];
   if (typeof limit === 'boolean') return limit;
   return limit === null || used < limit;
 }
