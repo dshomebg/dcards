@@ -6,3 +6,5 @@ export * from '../../platform/card.schema';
 export * from '../../platform/organization.schema';
 export * from '../../platform/profile.schema';
 export * from '../../platform/scan.schema';
+export * from '../../shop/order.schema';
+export * from '../../shop/product.schema';

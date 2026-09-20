@@ -1,18 +1,26 @@
 # Предаване между сесиите
 
-> **Презаписано:** 2026-09-19, край на първата сесия (инфраструктура + скеле).
+> **Презаписано:** 2026-09-20, след SHP-2b.
 > Чете се веднага след `CLAUDE.md`. Презаписва се, не се дописва. Таван 200 реда.
 
 ## Докъде сме
 
-**Етап 2 е завършен (CRD-1 + CRD-2), локално, чака комит + деплой. Следва етап 3 — магазинът
-(продукти, количка, checkout с наложен платеж, админ на поръчки) — или части от етап 4
-(статистика, Pro gating, имейли).** Платформата вече обслужва карти, продадени и извън сайта.
-OPS-1/OPS-2 (rate limit, seed, backup на cron 03:00, смяна на парола) са готови. `CARD_URL_BASE`
-(само origin) е адресът върху чипа — при кратък домейн се задава в прод `.env` ПРЕДИ партида.
-**Етап 1 е завършен и комитнат. ПРОДЪТ Е НА ЖИВО от 2026-09-20: `https://www.dcards-bg.com`**
-(release в `/opt/dcards/.deploy-history`; nginx шаблон `dcards-proxy` в Hestia; първи админ
-`info@dcards-bg.com`, паролата е при собственика).
+**ПРОДЪТ Е НА ЖИВО от 2026-09-20: `https://www.dcards-bg.com`** (release в
+`/opt/dcards/.deploy-history`; nginx шаблон `dcards-proxy` в Hestia; първи админ
+`info@dcards-bg.com`, паролата е при собственика). Деплойнати: етап 0–2 + OPS-1/2.
+
+**Готови локално, чакат commit + deploy: SHP-1 (продукти), SHP-2a (витрина + количка), SHP-2b
+(checkout с наложен платеж, `orders` + миграция `0005`, `/order/{number}`, `/app/orders`).**
+Следват SHP-2c (имейл за поръчка през Hestia SMTP — виж open-items за личните данни) и SHP-3
+(админ на поръчки, статуси, `cards.order_id`, присвояване на карти). После етап 4.
+
+`SHP-2b`: `placeOrder` заключва вариантите (`FOR UPDATE OF`), сумира по вариант, сваля stock;
+гостът гледа поръчката през токен (`order_view`, 24 h), клиентът — през org; `checkout-lock` в
+Redis срещу двоен submit; лимити `checkoutIp` 5/h, `checkoutEmail` 3/h. `SHIPPING_COST_MINOR`
+(default 590) — празен ред в `.env` е „по подразбиране", не 0.
+
+`SHP-2a`: `(shop)` група, количка в Redis с id в cookie (ARC-12), `priceCart` от базата.
+`SHP-1`: `/admin/products` с варианти (upsert по id, MON-3), `MATERIAL_LABELS`.
 
 `PLT-5`: редактор `/app/profiles/{id}` (полета, адрес, тема, видимост, линкове ↑/↓, превю,
 изтриване); `profile-edit.service.ts` с `getProfileForEdit/updateProfile/replaceProfileLinks/
@@ -49,15 +57,12 @@ deleteProfile` — всички по `org_id AND id`.
 - `docker build -f docker/app.Dockerfile` → образ 282 MB със `server.js`, `migrate.mjs`, `drizzle/`.
 - Сървър: DNS, Let's Encrypt (web + mail), пощата `info@` с TLS — всичко живо.
 
-Не е правено: bootstrap на `/opt/dcards`, nginx шаблон, първи deploy — `docs/go-live.md`.
-
 ## Следващата стъпка
 
-**Етап 1 от `zadanie.md`:** auth (имейл + парола, argon2id, сесии в Redis), организации,
-профили + линкове, публична страница `[slug]`, vCard, QR. Първо — Drizzle схемите на
-`users / organizations / org_members / profiles / profile_links` и първата миграция.
-
-Преди това собственикът решава: канонично `www` или apex (виж `go-live.md`).
+1. Собственикът комитва и деплойва SHP-1/2a/2b (миграция `0005` минава при deploy), после
+   създава реалните продукти в `/admin/products` и слага `SHIPPING_COST_MINOR` в прод `.env`.
+2. SHP-2c: писмо при поръчка (Hestia SMTP, `MAIL_*` в env) — само номер + линк, без адрес.
+3. SHP-3: `/admin/orders`, статуси, tracking, `cards.order_id`, ясно съобщение при `restrict`.
 
 ## Капани, които вече ни хванаха
 

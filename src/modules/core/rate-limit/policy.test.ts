@@ -39,3 +39,25 @@ describe('claim policy', () => {
     expect(RATE_POLICY.claimUser).toEqual({ limit: 10, windowSec: 3600 });
   });
 });
+
+describe('cart policy', () => {
+  it('keys the guest cart actions per IP at 60 a minute', () => {
+    expect(rateKey.cartIp('203.0.113.9')).toBe('rl:cart:ip:203.0.113.9');
+    expect(RATE_POLICY.cartIp).toEqual({ limit: 60, windowSec: 60 });
+    expect(rateKey.cartNewIp('203.0.113.9')).toBe('rl:cart-new:ip:203.0.113.9');
+    expect(RATE_POLICY.cartNewIp).toEqual({ limit: 10, windowSec: 3600 });
+  });
+});
+
+describe('checkout policy', () => {
+  it('keys the checkout per IP and per lowercased email', () => {
+    expect(rateKey.checkoutIp('203.0.113.9')).toBe(
+      'rl:checkout:ip:203.0.113.9',
+    );
+    expect(rateKey.checkoutEmail('Ivan@X.bg')).toBe(
+      'rl:checkout:email:ivan@x.bg',
+    );
+    expect(RATE_POLICY.checkoutIp).toEqual({ limit: 5, windowSec: 3600 });
+    expect(RATE_POLICY.checkoutEmail).toEqual({ limit: 3, windowSec: 3600 });
+  });
+});

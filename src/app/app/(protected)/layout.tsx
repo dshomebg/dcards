@@ -2,11 +2,11 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { LogoutButton } from '@/components/logout-button';
-import { signOutUser } from '@/modules/auth';
 import { env } from '@/modules/core';
 
 import { AppNav } from './app-nav';
 import { requireCurrent } from './current';
+import { signOutAndClear } from './sign-out';
 
 /**
  * Пазачът на `/app`. Проверката е СЪРВЪРНА — скриване в браузъра не е защита.
@@ -26,7 +26,7 @@ export default async function ProtectedAppLayout({
 
         <div className="flex min-w-0 shrink-0 items-center gap-3">
           <span className="text-text-muted truncate text-sm">{user.name}</span>
-          <LogoutButton action={signOutUser} />
+          <LogoutButton action={signOutAndClear} />
         </div>
       </header>
 

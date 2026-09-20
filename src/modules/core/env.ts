@@ -37,6 +37,12 @@ const schema = z.object({
   MAIL_FROM: z.string().optional(),
   STORE_CURRENCY: z.string().default('BGN'),
   STORE_LOCALE: z.string().default('bg-BG'),
+  // Доставка в minor units (MON-1). Празен ред в `.env` е „по подразбиране",
+  // не безплатна доставка — `coerce` би направил `''` на 0.
+  SHIPPING_COST_MINOR: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.coerce.number().int().min(0).default(590),
+  ),
 });
 
 export type Env = z.infer<typeof schema>;

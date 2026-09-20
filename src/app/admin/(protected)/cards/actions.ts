@@ -27,8 +27,8 @@ function logUnexpected(where: string, error: unknown): void {
   // активация). Логват се само код и constraint (DAT-6).
   if (error instanceof DrizzleQueryError) {
     const cause = error.cause as
-      { code?: string; constraint?: string } | undefined;
-    console.error(`${where}: db error`, cause?.code, cause?.constraint);
+      { code?: string; constraint_name?: string } | undefined;
+    console.error(`${where}: db error`, cause?.code, cause?.constraint_name);
     return;
   }
   console.error(`${where}:`, error);

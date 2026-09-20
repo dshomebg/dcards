@@ -23,6 +23,13 @@ export const RATE_POLICY = {
   claimCard: { limit: 5, windowSec: 3600 },
   // Записите в `scans` са без auth — таван по карта над всяко реално сканиране.
   scanCard: { limit: 30, windowSec: 60 },
+  // Количката е без auth — таван по IP над всяко реално пазаруване.
+  cartIp: { limit: 60, windowSec: 60 },
+  // Нова количка = нов Redis ключ с TTL 7 дни без auth — реален гост прави една.
+  cartNewIp: { limit: 10, windowSec: 3600 },
+  // Checkout е без auth и пише в базата — по IP и по имейл, броят се и успехите.
+  checkoutIp: { limit: 5, windowSec: 3600 },
+  checkoutEmail: { limit: 3, windowSec: 3600 },
 } as const satisfies Record<string, RatePolicy>;
 
 export const rateKey = {
@@ -38,6 +45,10 @@ export const rateKey = {
   claimUser: (userId: string) => `rl:claim:user:${userId}`,
   claimCard: (cardId: string) => `rl:claim:card:${cardId}`,
   scanCard: (cardId: string) => `rl:scan:card:${cardId}`,
+  cartIp: (ip: string) => `rl:cart:ip:${ip}`,
+  cartNewIp: (ip: string) => `rl:cart-new:ip:${ip}`,
+  checkoutIp: (ip: string) => `rl:checkout:ip:${ip}`,
+  checkoutEmail: (email: string) => `rl:checkout:email:${email.toLowerCase()}`,
 } as const;
 
 export function tooManyMessage(retryAfterSec: number): string {

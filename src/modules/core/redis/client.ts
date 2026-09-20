@@ -11,5 +11,8 @@ export const redis =
     // лавина от опити, а един спокоен.
     maxRetriesPerRequest: 3,
     lazyConnect: true,
+    // Висящ (не паднал) Redis иначе държи всяка страница до proxy timeout-а;
+    // сесия/количка при изтекло време са `null`/празна, както при паднал.
+    commandTimeout: 1000,
   });
 if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis;

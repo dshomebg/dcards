@@ -29,6 +29,20 @@
       "when": 1789890360690,
       "tag": "0003_scans",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789892720759,
+      "tag": "0004_products_variants",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789896013411,
+      "tag": "0005_orders",
+      "breakpoints": true
     }
   ]
 }
