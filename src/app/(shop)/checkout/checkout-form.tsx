@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import { logoUrl } from '@/lib/logo-url';
 import {
   type CartView,
   COURIER_LABELS,
@@ -59,12 +60,23 @@ function OrderSummary({
       <ul className="flex flex-col gap-hint text-sm">
         {view.lines.map((line) => (
           <li key={line.id} className="flex justify-between gap-4">
-            <span>
-              {line.productName}
-              {line.variantName !== '' && ` · ${line.variantName}`} ×{' '}
-              {line.quantity}
-              <span className="text-text-muted block">
-                {line.personalization.name}
+            <span className="flex items-center gap-hint">
+              {line.personalization.logoKey !== null && (
+                <img
+                  src={logoUrl(line.personalization.logoKey)}
+                  alt="Лого"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 rounded-(--radius-control) border border-border object-contain"
+                />
+              )}
+              <span>
+                {line.productName}
+                {line.variantName !== '' && ` · ${line.variantName}`} ×{' '}
+                {line.quantity}
+                <span className="text-text-muted block">
+                  {line.personalization.name}
+                </span>
               </span>
             </span>
             <span>{formatPrice(line.lineTotal, format)}</span>

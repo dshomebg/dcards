@@ -14,6 +14,7 @@ export {
   cartPersonalizationSchema,
   cartQuantitySchema,
   emptyCart,
+  LOGO_KEY_PATTERN,
   MAX_CART_LINES,
   MAX_LINE_QUANTITY,
   parseCart,

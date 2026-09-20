@@ -34,7 +34,7 @@ const variant = (name: string, priceDelta: number, stock: number) => ({
 const line = (variantId: string, quantity: number, name = 'Иван') => ({
   variantId,
   quantity,
-  personalization: { name, title: null, notes: null },
+  personalization: { name, title: null, notes: null, logoKey: null },
 });
 
 async function seed(slug: string, isActive = true) {

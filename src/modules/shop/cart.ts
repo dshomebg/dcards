@@ -32,6 +32,10 @@ const optionalText = (max: number, tooLong: string) =>
       value === undefined || value === null || value === '' ? null : value,
     );
 
+// Огледало на `OBJECT_KEY_PATTERN` в `core/storage`: моделът е без runtime внос
+// от `core` (barrel-ът отваря пул). Ключът се издава само от `uploadLogoAction`.
+export const LOGO_KEY_PATTERN = /^logos\/[0-9a-f-]{36}\.webp$/;
+
 export const cartPersonalizationSchema = z.object({
   name: z
     .string()
@@ -40,6 +44,12 @@ export const cartPersonalizationSchema = z.object({
     .max(80, 'Името е до 80 знака.'),
   title: optionalText(120, 'Длъжността е до 120 знака.'),
   notes: optionalText(300, 'Бележките са до 300 знака.'),
+  // `default(null)`: количките отпреди полето минават `parseCart` без загуба.
+  logoKey: z
+    .string()
+    .regex(LOGO_KEY_PATTERN, 'Невалидно лого.')
+    .nullable()
+    .default(null),
 });
 
 export const cartQuantitySchema = z

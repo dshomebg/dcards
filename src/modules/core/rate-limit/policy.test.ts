@@ -77,3 +77,10 @@ describe('scan policy', () => {
     expect(RATE_POLICY.scanProfile).toEqual({ limit: 30, windowSec: 60 });
   });
 });
+
+describe('upload policy', () => {
+  it('keys the guest logo upload per IP at 10 an hour', () => {
+    expect(rateKey.uploadIp('203.0.113.9')).toBe('rl:upload:ip:203.0.113.9');
+    expect(RATE_POLICY.uploadIp).toEqual({ limit: 10, windowSec: 3600 });
+  });
+});

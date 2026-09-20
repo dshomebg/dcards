@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -16,6 +16,7 @@ import {
 } from '@/modules/shop';
 
 import { addToCartAction } from '../../cart/actions';
+import { LogoUpload } from './logo-upload';
 import {
   type AddToCartFormInput,
   addToCartFormSchema,
@@ -28,12 +29,13 @@ type Props = Readonly<{
   format: PriceFormat;
 }>;
 
-/** Вариант, име, длъжност, бележки, количество → `addToCartAction`. */
+/** Вариант, име, длъжност, лого, бележки, количество → `addToCartAction`. */
 export function AddToCartForm({ variants, format }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
@@ -44,6 +46,7 @@ export function AddToCartForm({ variants, format }: Props) {
       quantity: 1,
       name: '',
       title: '',
+      logoKey: null,
       notes: '',
     },
   });
@@ -104,10 +107,20 @@ export function AddToCartForm({ variants, format }: Props) {
         error={errors.title?.message}
         {...register('title')}
       />
+      <Controller
+        control={control}
+        name="logoKey"
+        render={({ field }) => (
+          <LogoUpload
+            value={field.value ?? null}
+            onChange={field.onChange}
+            error={errors.logoKey?.message}
+          />
+        )}
+      />
       <Textarea
         label="Бележки"
         rows={3}
-        hint="Логото ще ви поискаме по имейл след поръчката."
         error={errors.notes?.message}
         {...register('notes')}
       />

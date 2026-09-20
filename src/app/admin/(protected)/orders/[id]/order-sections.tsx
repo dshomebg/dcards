@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 
+import { logoUrl } from '@/lib/logo-url';
 import {
   type AdminOrderDto,
   COURIER_LABELS,
@@ -76,6 +77,25 @@ export function ShippingSection({ order }: Readonly<{ order: AdminOrderDto }>) {
   );
 }
 
+/** `download` с име по uuid — печатницата получава файл, не страница. */
+function LogoRow({ logoKey }: Readonly<{ logoKey: string }>) {
+  const href = logoUrl(logoKey);
+  return (
+    <span className="mt-1 flex items-center gap-hint">
+      <img
+        src={href}
+        alt="Лого"
+        width={48}
+        height={48}
+        className="h-12 w-12 rounded-(--radius-control) border border-border bg-surface object-contain"
+      />
+      <a href={href} download className="text-brand underline">
+        Свали
+      </a>
+    </span>
+  );
+}
+
 export function ItemsSection({
   order,
   format,
@@ -100,6 +120,9 @@ export function ItemsSection({
                 {item.personalization.notes !== null &&
                   ` — ${item.personalization.notes}`}
               </span>
+              {item.personalization.logoKey !== null && (
+                <LogoRow logoKey={item.personalization.logoKey} />
+              )}
             </span>
             <span className="whitespace-nowrap">
               {item.quantity} × {formatPrice(item.unitPrice, format)} ={' '}

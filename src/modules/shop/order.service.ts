@@ -216,6 +216,7 @@ const EMPTY_PERSONALIZATION: CartPersonalization = {
   name: '',
   title: null,
   notes: null,
+  logoKey: null,
 };
 
 /** Лош jsonb в базата → празни полета, не 500 (DAT-7). */

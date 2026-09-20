@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { buttonStyles } from '@/components/ui/button';
+import { logoUrl } from '@/lib/logo-url';
 import { db, env } from '@/modules/core';
 import {
   type CartViewLine,
@@ -71,11 +72,22 @@ function LineRow({
         )}
       </div>
 
-      <p className="text-text-muted text-sm">
-        {personalization.name}
-        {personalization.title !== null && `, ${personalization.title}`}
-        {personalization.notes !== null && ` — ${personalization.notes}`}
-      </p>
+      <div className="flex items-center gap-field">
+        {personalization.logoKey !== null && (
+          <img
+            src={logoUrl(personalization.logoKey)}
+            alt="Лого"
+            width={48}
+            height={48}
+            className="h-12 w-12 rounded-(--radius-control) border border-border object-contain"
+          />
+        )}
+        <p className="text-text-muted text-sm">
+          {personalization.name}
+          {personalization.title !== null && `, ${personalization.title}`}
+          {personalization.notes !== null && ` — ${personalization.notes}`}
+        </p>
+      </div>
 
       <div className="flex flex-wrap items-center gap-field">
         {/* `onchange` без JS не праща — затова има бутон „Обнови". */}

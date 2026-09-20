@@ -63,7 +63,7 @@ async function seedOrder(whiteQty = 2, blackQty = 1) {
     {
       variantId: white.id,
       quantity: whiteQty,
-      personalization: { name: 'А', title: null, notes: null },
+      personalization: { name: 'А', title: null, notes: null, logoKey: null },
     },
     'l1',
   );
@@ -73,7 +73,7 @@ async function seedOrder(whiteQty = 2, blackQty = 1) {
       {
         variantId: black.id,
         quantity: blackQty,
-        personalization: { name: 'Б', title: null, notes: null },
+        personalization: { name: 'Б', title: null, notes: null, logoKey: null },
       },
       'l2',
     );

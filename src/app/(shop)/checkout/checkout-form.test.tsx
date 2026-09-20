@@ -18,7 +18,12 @@ const view = {
       unitPrice: 1990,
       quantity: 2,
       lineTotal: 3980,
-      personalization: { name: 'Иван', title: null, notes: null },
+      personalization: {
+        name: 'Иван',
+        title: null,
+        notes: null,
+        logoKey: null,
+      },
       available: true,
     },
   ],

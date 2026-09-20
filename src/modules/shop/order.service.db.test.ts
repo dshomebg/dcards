@@ -50,10 +50,15 @@ const variant = (name: string, priceDelta: number, stock: number) => ({
   isActive: true,
 });
 
-const line = (variantId: string, quantity: number, name = 'Иван') => ({
+const line = (
+  variantId: string,
+  quantity: number,
+  name = 'Иван',
+  logoKey: string | null = null,
+) => ({
   variantId,
   quantity,
-  personalization: { name, title: null, notes: null },
+  personalization: { name, title: null, notes: null, logoKey },
 });
 
 async function seed(slug: string, whiteStock = 5, blackStock = 1) {
@@ -342,7 +347,12 @@ describe('getOrderForView / listOrdersByOrg', () => {
       quantity: 2,
       unitPrice: 1990,
       lineTotal: 3980,
-      personalization: { name: 'Иван', title: null, notes: null },
+      personalization: {
+        name: 'Иван',
+        title: null,
+        notes: null,
+        logoKey: null,
+      },
     });
 
     const byOrg = await getOrderForView(db, {
@@ -361,6 +371,29 @@ describe('getOrderForView / listOrdersByOrg', () => {
       },
     ]);
     expect(await listOrdersByOrg(db, other.orgId)).toEqual([]);
+  });
+
+  it('carries the logo key into order_items and back to the view', async () => {
+    const { white } = await seed('view-logo', 10);
+    const logoKey = 'logos/00000000-0000-4000-8000-000000000000.webp';
+    const placed = await placeOrder(db, {
+      cart: cartOf(line(white.id, 1, 'Иван', logoKey)),
+      customer,
+      shipping,
+      actor: null,
+    });
+    const stored = await db
+      .select({ personalization: orderItems.personalization })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, placed.id));
+    expect(stored[0]?.personalization.logoKey).toBe(logoKey);
+
+    const dto = await getOrderForView(db, {
+      number: placed.number,
+      orgId: null,
+      viaToken: true,
+    });
+    expect(dto?.items[0]?.personalization.logoKey).toBe(logoKey);
   });
 
   it('falls back to empty fields on bad jsonb instead of throwing', async () => {

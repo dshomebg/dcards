@@ -17,7 +17,7 @@ const VARIANT = '019969a0-0000-7000-8000-000000000001';
 const input = (name: string, quantity = 1) => ({
   variantId: VARIANT,
   quantity,
-  personalization: { name, title: null, notes: null },
+  personalization: { name, title: null, notes: null, logoKey: null },
 });
 
 function codeOf(work: () => unknown): string {
@@ -37,6 +37,25 @@ describe('parseCart', () => {
     expect(parseCart(null)).toEqual({ items: [] });
   });
 
+  it('reads a cart saved before logoKey existed', () => {
+    const cart = parseCart({
+      items: [
+        {
+          id: 'l1',
+          variantId: VARIANT,
+          quantity: 1,
+          personalization: {
+            name: 'Иван',
+            title: null,
+            notes: null,
+            // Без `logoKey` — така изглежда количка, записана преди SHP-4.
+          },
+        },
+      ],
+    });
+    expect(cart.items[0]?.personalization.logoKey).toBeNull();
+  });
+
   it('keeps a valid cart as is', () => {
     const cart = addLine(emptyCart(), input('Иван', 2), 'l1');
     expect(parseCart(JSON.parse(JSON.stringify(cart)))).toEqual(cart);
@@ -54,7 +73,22 @@ describe('cartLineInputSchema', () => {
       name: 'Иван',
       title: null,
       notes: null,
+      logoKey: null,
     });
+  });
+
+  it('takes a server-made logo key and refuses anything else', () => {
+    const KEY = 'logos/00000000-0000-4000-8000-000000000000.webp';
+    const withLogo = (logoKey: unknown) =>
+      cartLineInputSchema.safeParse({
+        ...input('Иван'),
+        personalization: { name: 'Иван', logoKey },
+      });
+    expect(withLogo(KEY).data?.personalization.logoKey).toBe(KEY);
+    expect(withLogo(null).data?.personalization.logoKey).toBeNull();
+    expect(withLogo('../x').success).toBe(false);
+    expect(withLogo('logos/x.webp').success).toBe(false);
+    expect(withLogo('').success).toBe(false);
   });
 
   it('rejects quantity 0 and 21, an empty name and long notes', () => {

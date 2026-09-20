@@ -34,6 +34,8 @@ export const RATE_POLICY = {
   // Checkout е без auth и пише в базата — по IP и по имейл, броят се и успехите.
   checkoutIp: { limit: 5, windowSec: 3600 },
   checkoutEmail: { limit: 3, windowSec: 3600 },
+  // Качване на лого без auth: всяко е sharp + запис на диска — 10/час на IP.
+  uploadIp: { limit: 10, windowSec: 3600 },
 } as const satisfies Record<string, RatePolicy>;
 
 export const rateKey = {
@@ -55,6 +57,7 @@ export const rateKey = {
   cartNewIp: (ip: string) => `rl:cart-new:ip:${ip}`,
   checkoutIp: (ip: string) => `rl:checkout:ip:${ip}`,
   checkoutEmail: (email: string) => `rl:checkout:email:${email.toLowerCase()}`,
+  uploadIp: (ip: string) => `rl:upload:ip:${ip}`,
 } as const;
 
 export function tooManyMessage(retryAfterSec: number): string {

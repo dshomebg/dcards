@@ -8,6 +8,13 @@ export {
   uniqueViolationConstraint,
 } from './db/errors';
 export { type Env, env } from './env';
+export {
+  LOGO_MAX_BYTES,
+  LOGO_MAX_SIDE,
+  LogoError,
+  type LogoErrorCode,
+  processLogo,
+} from './image';
 export { type MailMessage, sendMail } from './mail/send';
 export { clientIpFrom } from './rate-limit/client-ip';
 export {
@@ -23,6 +30,14 @@ export {
   tooManyMessage,
 } from './rate-limit/policy';
 export { redis } from './redis/client';
+export {
+  createLogoKey,
+  deleteObject,
+  isObjectKey,
+  OBJECT_KEY_PATTERN,
+  putObject,
+  readObject,
+} from './storage';
 
 // Готов лимитер върху общия Redis клиент — потребителите не строят свой.
 export const rateLimit = createLimiter(redis);

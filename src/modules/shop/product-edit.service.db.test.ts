@@ -218,7 +218,12 @@ describe('restrict from order_items', () => {
         {
           variantId: white.id,
           quantity: 1,
-          personalization: { name: 'А', title: null, notes: null },
+          personalization: {
+            name: 'А',
+            title: null,
+            notes: null,
+            logoKey: null,
+          },
         },
         'l1',
       ),
