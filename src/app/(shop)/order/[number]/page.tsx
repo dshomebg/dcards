@@ -132,6 +132,13 @@ export default async function OrderPage(props: Props) {
 
       <p>Ще се свържем с вас за потвърждение. Плащане при доставка.</p>
 
+      {order.trackingNumber !== null &&
+        (order.status === 'shipped' || order.status === 'delivered') && (
+          <p className="text-sm">
+            Пратка: <span className="font-mono">{order.trackingNumber}</span>
+          </p>
+        )}
+
       <Items order={order} format={format} />
 
       <dl className="flex flex-col items-end gap-hint border-t border-border pt-4 text-sm">

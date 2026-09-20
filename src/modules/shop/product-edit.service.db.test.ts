@@ -3,6 +3,8 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/modules/core';
 
+import { addLine, emptyCart } from './cart';
+import { placeOrder } from './order.service';
 import { products, productVariants } from './product.schema';
 import { createProduct, ProductError } from './product.service';
 import {
@@ -202,5 +204,41 @@ describe('deleteProduct', () => {
     await expect(codeOf(deleteProduct(db, dto.id))).resolves.toBe(
       'product_not_found',
     );
+  });
+});
+
+describe('restrict from order_items', () => {
+  it('refuses to delete a variant or product with orders and keeps the product', async () => {
+    const dto = await seed('del-ordered');
+    const [white, black] = dto.variants;
+    if (white === undefined || black === undefined) throw new Error('seed');
+    await placeOrder(db, {
+      cart: addLine(
+        emptyCart(),
+        {
+          variantId: white.id,
+          quantity: 1,
+          personalization: { name: 'А', title: null, notes: null },
+        },
+        'l1',
+      ),
+      customer: { name: 'Иван', phone: '+359881234567', email: 'i@x.bg' },
+      shipping: { courier: 'econt', address: null, office: 'Офис', note: null },
+      actor: null,
+    });
+
+    expect(
+      await codeOf(
+        replaceVariants(db, dto.id, [
+          { ...variant('Черна', 250), id: black.id },
+        ]),
+      ),
+    ).toBe('has_orders');
+    expect(await rowsOf(dto.id)).toHaveLength(2);
+
+    expect(await codeOf(deleteProduct(db, dto.id))).toBe('has_orders');
+    expect(
+      await db.select().from(products).where(eq(products.id, dto.id)),
+    ).toHaveLength(1);
   });
 });

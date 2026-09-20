@@ -13,6 +13,7 @@ import {
   orderItems,
   orders,
   type OrderStatus,
+  type PaymentStatus,
 } from './order.schema';
 import type { VariantWithProduct } from './product.repository';
 import { products, productVariants } from './product.schema';
@@ -66,11 +67,12 @@ export async function nextOrderSequence(executor: DbExecutor): Promise<number> {
 export async function insertOrder(
   executor: DbExecutor,
   values: NewOrder,
-): Promise<Pick<Order, 'id' | 'number'>> {
-  const rows = await executor
-    .insert(orders)
-    .values(values)
-    .returning({ id: orders.id, number: orders.number });
+): Promise<Pick<Order, 'id' | 'number' | 'createdAt'>> {
+  const rows = await executor.insert(orders).values(values).returning({
+    id: orders.id,
+    number: orders.number,
+    createdAt: orders.createdAt,
+  });
   const created = rows[0];
   if (created === undefined) throw new Error('insert orders returned no row');
   return created;
@@ -135,4 +137,117 @@ export function findOrdersByOrg(
     .from(orders)
     .where(eq(orders.orgId, orgId))
     .orderBy(desc(orders.createdAt), desc(orders.id));
+}
+
+/** Всички поръчки за админа, най-новите първо; `status` стеснява, `undefined` = всички. */
+export function findOrdersForAdmin(
+  executor: DbExecutor,
+  status: OrderStatus | undefined,
+): Promise<Order[]> {
+  return executor
+    .select()
+    .from(orders)
+    .where(status === undefined ? undefined : eq(orders.status, status))
+    .orderBy(desc(orders.createdAt), desc(orders.id));
+}
+
+export async function findOrderById(
+  executor: DbExecutor,
+  id: string,
+): Promise<Order | null> {
+  const rows = await executor
+    .select()
+    .from(orders)
+    .where(eq(orders.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Заключва поръчката до края на транзакцията (`FOR UPDATE`). */
+export async function lockOrder(
+  executor: DbExecutor,
+  id: string,
+): Promise<Order | null> {
+  const rows = await executor
+    .select()
+    .from(orders)
+    .where(eq(orders.id, id))
+    .for('update');
+  return rows[0] ?? null;
+}
+
+export interface OrderStatusUpdate {
+  readonly id: string;
+  readonly from: OrderStatus;
+  readonly to: OrderStatus;
+  readonly trackingNumber?: string;
+  readonly paymentStatus?: PaymentStatus;
+}
+
+/**
+ * `WHERE status = from` — при двоен submit вторият не намира ред и страничните
+ * ефекти (stock, карти) стават точно веднъж. `null` = преходът вече е минал.
+ */
+export async function updateOrderStatus(
+  executor: DbExecutor,
+  { id, from, to, trackingNumber, paymentStatus }: OrderStatusUpdate,
+): Promise<Order | null> {
+  const rows = await executor
+    .update(orders)
+    .set({
+      status: to,
+      ...(trackingNumber === undefined ? {} : { trackingNumber }),
+      ...(paymentStatus === undefined ? {} : { paymentStatus }),
+    })
+    .where(and(eq(orders.id, id), eq(orders.status, from)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/** Само след изпращане — преди това номерът идва с прехода към `shipped`. `null` = не мина. */
+export async function updateOrderTrackingNumber(
+  executor: DbExecutor,
+  id: string,
+  trackingNumber: string,
+): Promise<Pick<Order, 'number'> | null> {
+  const rows = await executor
+    .update(orders)
+    .set({ trackingNumber })
+    .where(
+      and(eq(orders.id, id), inArray(orders.status, ['shipped', 'delivered'])),
+    )
+    .returning({ number: orders.number });
+  return rows[0] ?? null;
+}
+
+export interface VariantQuantityRow {
+  readonly variantId: string;
+  readonly quantity: number;
+}
+
+/** Агрегирано по вариант и в ред по `variant_id` — редът на заключване при отказ. */
+export function sumOrderQuantitiesByVariant(
+  executor: DbExecutor,
+  orderId: string,
+): Promise<VariantQuantityRow[]> {
+  return executor
+    .select({
+      variantId: orderItems.variantId,
+      quantity: sql<number>`sum(${orderItems.quantity})::int`,
+    })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId))
+    .groupBy(orderItems.variantId)
+    .orderBy(asc(orderItems.variantId));
+}
+
+export async function incrementVariantStock(
+  executor: DbExecutor,
+  variantId: string,
+  quantity: number,
+): Promise<void> {
+  await executor
+    .update(productVariants)
+    .set({ stock: sql`${productVariants.stock} + ${quantity}` })
+    .where(eq(productVariants.id, variantId));
 }

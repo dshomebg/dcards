@@ -50,6 +50,9 @@ export {
   type OrderViewDto,
   type OrderViewItemDto,
   type PaymentMethod,
+  type PaymentStatus,
+  type PlacedOrder,
+  type PlacedOrderItem,
 } from './order.schema';
 export {
   getOrderForView,
@@ -57,16 +60,40 @@ export {
   OrderError,
   type OrderErrorCode,
   type OrderViewQuery,
-  type PlacedOrder,
   placeOrder,
   type PlaceOrderInput,
   placeOrderInputSchema,
 } from './order.service';
 export {
+  type AdminOrderDto,
+  type AdminOrderSummaryDto,
+  CARD_EDITABLE_STATUSES,
+  getOrderForAdmin,
+  listOrdersForAdmin,
+  lockOrderForCards,
+  ORDER_TRANSITIONS,
+  type OrderCardsLock,
+  type OrderTransition,
+  setTrackingNumber,
+  TRACKING_PATTERN,
+  transitionOrder,
+  type TransitionOrderInput,
+} from './order-admin.service';
+export {
+  orderConfirmationMail,
+  type OrderMail,
+  type OrderMailOptions,
+} from './order-mail';
+export {
   formatOrderNumber,
   ORDER_NUMBER_PATTERN,
   orderNumberSchema,
 } from './order-number';
+export {
+  orderShippedMail,
+  type ShippedMailInput,
+  type ShippedMailOptions,
+} from './order-shipped-mail';
 export {
   PRODUCT_MATERIALS,
   PRODUCT_SLUG_PATTERN,

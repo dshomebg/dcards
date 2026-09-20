@@ -29,12 +29,21 @@ import {
   type OrderSummaryDto,
   type OrderViewDto,
   type OrderViewItemDto,
+  type PlacedOrder,
 } from './order.schema';
 import { formatOrderNumber } from './order-number';
 import type { VariantWithProduct } from './product.repository';
 
 export type OrderErrorCode =
-  'cart_empty' | 'out_of_stock' | 'unavailable' | 'input_invalid';
+  | 'cart_empty'
+  | 'out_of_stock'
+  | 'unavailable'
+  | 'input_invalid'
+  | 'order_not_found'
+  | 'transition_invalid'
+  | 'tracking_required'
+  | 'tracking_not_shipped'
+  | 'cards_locked';
 
 const MESSAGES: Readonly<Record<OrderErrorCode, (name: string) => string>> = {
   cart_empty: () => 'Количката е празна.',
@@ -43,6 +52,12 @@ const MESSAGES: Readonly<Record<OrderErrorCode, (name: string) => string>> = {
   unavailable: (name) =>
     `„${name}" вече не се предлага. Премахни го от количката.`,
   input_invalid: () => 'Има невалидни или твърде дълги полета.',
+  order_not_found: () => 'Поръчката не съществува.',
+  transition_invalid: () =>
+    'Този преход не е позволен от текущия статус — презареди страницата.',
+  tracking_required: () => 'Въведи номер на пратка (до 60 знака).',
+  tracking_not_shipped: () => 'Номер на пратка се записва след изпращане.',
+  cards_locked: () => 'Картите се променят само преди изпращане.',
 };
 
 /** `code` е за тестовете и action-а; `message` носи името на реда за човека. */
@@ -66,11 +81,6 @@ export const placeOrderInputSchema = z.object({
 });
 
 export type PlaceOrderInput = z.input<typeof placeOrderInputSchema>;
-
-export interface PlacedOrder {
-  readonly id: string;
-  readonly number: string;
-}
 
 interface LockedLine {
   readonly row: VariantWithProduct;
@@ -180,7 +190,18 @@ export async function placeOrder(
       tx,
       items.map((item) => ({ ...item, orderId: created.id })),
     );
-    return created;
+    return {
+      ...created,
+      items: items.map(({ productName, variantName, quantity, unitPrice }) => ({
+        productName,
+        variantName,
+        quantity,
+        unitPrice,
+      })),
+      subtotal,
+      shippingCost,
+      total: subtotal + shippingCost,
+    };
   });
 }
 
@@ -218,7 +239,11 @@ function viewItem(item: OrderItem): OrderViewItemDto {
   };
 }
 
-function toViewDto(order: Order, items: readonly OrderItem[]): OrderViewDto {
+/** Общо с админа (`order-admin.service.ts`) — лош jsonb дава празни полета, не 500. */
+export function toViewDto(
+  order: Order,
+  items: readonly OrderItem[],
+): OrderViewDto {
   return {
     number: order.number,
     status: order.status,
@@ -229,6 +254,7 @@ function toViewDto(order: Order, items: readonly OrderItem[]): OrderViewDto {
     subtotal: order.subtotal,
     shippingCost: order.shippingCost,
     total: order.total,
+    trackingNumber: order.trackingNumber,
     items: items.map(viewItem),
   };
 }

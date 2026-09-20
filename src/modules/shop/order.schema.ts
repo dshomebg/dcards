@@ -202,6 +202,7 @@ export interface OrderViewDto {
   readonly subtotal: number;
   readonly shippingCost: number;
   readonly total: number;
+  readonly trackingNumber: string | null;
   readonly items: readonly OrderViewItemDto[];
 }
 
@@ -210,4 +211,22 @@ export interface OrderSummaryDto {
   readonly status: OrderStatus;
   readonly total: number;
   readonly createdAt: Date;
+}
+
+export interface PlacedOrderItem {
+  readonly productName: string;
+  readonly variantName: string;
+  readonly quantity: number;
+  readonly unitPrice: number;
+}
+
+/** Каквото трябва на писмото (SHP-2c) — от заключените цени, без втора заявка. */
+export interface PlacedOrder {
+  readonly id: string;
+  readonly number: string;
+  readonly createdAt: Date;
+  readonly items: readonly PlacedOrderItem[];
+  readonly subtotal: number;
+  readonly shippingCost: number;
+  readonly total: number;
 }

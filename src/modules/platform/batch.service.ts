@@ -98,6 +98,8 @@ export interface BatchSummary {
   readonly quantity: number;
   /** Карти със статус ≠ `blank` — минали през писача на чипове. */
   readonly written: number;
+  /** Точно `written` — свободни за присвояване към поръчка. */
+  readonly available: number;
   readonly active: number;
   readonly createdAt: Date;
 }
@@ -109,10 +111,12 @@ export async function listBatches(
     findBatches(executor),
     countCardsByBatchAndStatus(executor),
   ]);
-  const byBatch = new Map<string, { written: number; active: number }>();
+  const empty = () => ({ written: 0, available: 0, active: 0 });
+  const byBatch = new Map<string, ReturnType<typeof empty>>();
   for (const row of counts) {
-    const acc = byBatch.get(row.batchId) ?? { written: 0, active: 0 };
+    const acc = byBatch.get(row.batchId) ?? empty();
     if (row.status !== 'blank') acc.written += row.total;
+    if (row.status === 'written') acc.available += row.total;
     if (row.status === 'active') acc.active += row.total;
     byBatch.set(row.batchId, acc);
   }
@@ -121,7 +125,7 @@ export async function listBatches(
     name: batch.name,
     quantity: batch.quantity,
     createdAt: batch.createdAt,
-    ...(byBatch.get(batch.id) ?? { written: 0, active: 0 }),
+    ...(byBatch.get(batch.id) ?? empty()),
   }));
 }
 

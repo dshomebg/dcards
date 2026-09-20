@@ -35,6 +35,15 @@ export {
 } from './card-activation.service';
 export { buildCardsCsv, type CardCsvRow } from './card-csv';
 export {
+  assignCardsFromBatch,
+  type AssignCardsFromBatchInput,
+  attachOrderCardsToOrg,
+  listCardsByOrder,
+  type OrderCardDto,
+  releaseOrderCard,
+  releaseOrderCards,
+} from './card-fulfillment.service';
+export {
   ACTIVATION_CODE_PATTERN,
   CARD_ID_ALPHABET,
   CARD_ID_LENGTH,

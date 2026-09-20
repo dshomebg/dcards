@@ -18,7 +18,10 @@ export type CardErrorCode =
   | 'card_foreign_org'
   | 'card_already_active'
   | 'card_disabled'
-  | 'profile_not_found';
+  | 'profile_not_found'
+  | 'batch_not_found'
+  | 'batch_short'
+  | 'order_quota';
 
 const MESSAGES: Readonly<Record<CardErrorCode, string>> = {
   input_invalid: 'Има невалидни полета.',
@@ -30,6 +33,10 @@ const MESSAGES: Readonly<Record<CardErrorCode, string>> = {
   card_already_active: 'Картата вече е активирана.',
   card_disabled: 'Картата не е активна.',
   profile_not_found: 'Профилът не е в тази организация.',
+  batch_not_found: 'Партидата не съществува.',
+  batch_short:
+    'В партидата няма толкова свободни карти — нито една не е взета.',
+  order_quota: 'Картите надхвърлят поръчаните бройки.',
 };
 
 /** `code` е за тестовете и екраните; `message` е за човека. */

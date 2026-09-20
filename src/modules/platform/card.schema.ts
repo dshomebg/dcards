@@ -70,6 +70,8 @@ export const cards = pgTable(
     profileId: uuid('profile_id').references(() => profiles.id, {
       onDelete: 'set null',
     }),
+    // Без FK към `orders` — магазинът може да липсва (ARC-2); целостта е в app-слоя.
+    orderId: uuid('order_id'),
     writtenAt: nullableTimestamp('written_at'),
     activatedAt: nullableTimestamp('activated_at'),
   },
@@ -78,6 +80,7 @@ export const cards = pgTable(
     index('cards_batch_idx').on(table.batchId),
     index('cards_org_idx').on(table.orgId),
     index('cards_profile_idx').on(table.profileId),
+    index('cards_order_idx').on(table.orderId),
     uniqueIndex('cards_batch_code_idx').on(table.batchId, table.activationCode),
     check('cards_id_format', sql`${table.id} ~ ${CARD_ID_PATTERN_SQL}`),
     check(

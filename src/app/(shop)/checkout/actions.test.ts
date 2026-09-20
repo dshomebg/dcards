@@ -19,8 +19,19 @@ const current = vi.hoisted(() => ({ loadCurrent: vi.fn() }));
 const revalidatePath = vi.hoisted(() => vi.fn());
 
 // `core` отваря пул при импорт; `store` и `order-view` носят `server-only`.
+const mail = vi.hoisted(() => ({ sendMail: vi.fn() }));
+const envValues = vi.hoisted(() => ({
+  APP_NAME: 'DCARDS',
+  APP_URL: 'http://localhost:3100',
+  STORE_CURRENCY: 'BGN',
+  STORE_LOCALE: 'bg-BG',
+  MAIL_ADMIN_TO: undefined as string | undefined,
+}));
+
 vi.mock('@/modules/core', async () => ({
   db: {},
+  env: () => envValues,
+  sendMail: mail.sendMail,
   rateLimit,
   ...(await vi.importActual('@/modules/core/rate-limit/policy')),
   ...(await vi.importActual('@/modules/core/rate-limit/client-ip')),
@@ -36,6 +47,8 @@ vi.mock('next/headers', () => ({
   headers: () => Promise.resolve(new Headers({ 'x-real-ip': '203.0.113.9' })),
 }));
 vi.mock('next/cache', () => ({ revalidatePath }));
+// `after` изпълнява веднага — тестът чака писмото като част от action-а.
+vi.mock('next/server', () => ({ after: (fn: () => Promise<void>) => fn() }));
 vi.mock('next/navigation', () => ({
   redirect: (to: string) => {
     throw new Error(`REDIRECT:${to}`);
@@ -75,7 +88,16 @@ beforeEach(() => {
   shop.placeOrder.mockReset().mockResolvedValue({
     id: 'o1',
     number: 'DC-2026-000001',
+    createdAt: new Date('2026-09-20T10:00:00Z'),
+    items: [
+      { productName: 'PVC', variantName: 'Бяла', quantity: 2, unitPrice: 1990 },
+    ],
+    subtotal: 3980,
+    shippingCost: 590,
+    total: 4570,
   });
+  mail.sendMail.mockReset().mockResolvedValue(true);
+  envValues.MAIL_ADMIN_TO = undefined;
   store.readCart.mockReset().mockResolvedValue(cart);
   store.writeCart.mockReset().mockResolvedValue(undefined);
   store.acquireCheckoutLock.mockReset().mockResolvedValue(true);
@@ -182,6 +204,28 @@ describe('placeOrderAction', () => {
     );
     expect(store.writeCart).toHaveBeenCalledWith({ items: [] });
     expect(revalidatePath).toHaveBeenCalledWith('/', 'layout');
+    expect(mail.sendMail).toHaveBeenCalledOnce();
+    expect(mail.sendMail.mock.calls[0]?.[0]).toMatchObject({
+      to: 'Ivan@X.bg',
+      subject: 'Поръчка DC-2026-000001 — DCARDS',
+    });
+    expect(mail.sendMail.mock.calls[0]?.[0].text).toContain('45,70');
+  });
+
+  it('sends a second copy to MAIL_ADMIN_TO when set', async () => {
+    envValues.MAIL_ADMIN_TO = 'info@x.bg';
+    await expect(placeOrderAction(input)).rejects.toThrow('REDIRECT:');
+    expect(mail.sendMail).toHaveBeenCalledTimes(2);
+    expect(mail.sendMail.mock.calls[1]?.[0]).toMatchObject({
+      to: 'info@x.bg',
+      subject: '[Нова поръчка] Поръчка DC-2026-000001 — DCARDS',
+    });
+  });
+
+  it('sends no mail when the order fails', async () => {
+    shop.placeOrder.mockRejectedValue(new OrderError('cart_empty'));
+    await placeOrderAction(input);
+    expect(mail.sendMail).not.toHaveBeenCalled();
   });
 
   it('passes the signed-in actor and issues no guest token', async () => {
@@ -201,6 +245,7 @@ describe('placeOrderAction', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     orderView.issueOrderViewToken.mockRejectedValue(new Error('ECONNRESET'));
     store.writeCart.mockRejectedValue(new Error('ECONNRESET'));
+    mail.sendMail.mockRejectedValue(new Error('ETIMEDOUT'));
     await expect(placeOrderAction(input)).rejects.toThrow(
       'REDIRECT:/order/DC-2026-000001',
     );

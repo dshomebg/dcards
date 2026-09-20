@@ -101,7 +101,7 @@ MAIL_HOST=mail.$Domain
 MAIL_PORT=465
 MAIL_SECURE=true
 MAIL_USER=info@$Domain
-MAIL_PASS=$mailPass
+MAIL_PASS='$mailPass'
 MAIL_FROM="DCARDS <info@$Domain>"
 
 STORE_CURRENCY=BGN

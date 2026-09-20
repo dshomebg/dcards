@@ -24,3 +24,12 @@ export function uniqueViolationConstraint(error: unknown): string | null {
   if (cause?.code !== '23505') return null;
   return cause.constraint_name ?? null;
 }
+
+// `ON DELETE RESTRICT` дава 23001, не 23503 — второто е за `NO ACTION` и insert.
+const FK_CODES: ReadonlySet<string> = new Set(['23503', '23001']);
+
+/** Нарушен външен ключ — изтриване на ред, към който сочат поръчки. */
+export function isForeignKeyViolation(error: unknown): boolean {
+  const code = pgCause(error)?.code;
+  return code !== undefined && FK_CODES.has(code);
+}

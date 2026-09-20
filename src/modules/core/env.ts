@@ -14,36 +14,50 @@ const originUrl = z.url().refine((value) => {
   );
 }, 'Only scheme and host are allowed, without path, query or hash.');
 
-const schema = z.object({
-  NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
-  APP_NAME: z.string().default('DCARDS'),
-  APP_URL: originUrl.default('http://localhost:3000'),
-  // Адресът върху картите (`/c/{id}`) — къс домейн, купен отделно; иначе `APP_URL`.
-  CARD_URL_BASE: originUrl.optional(),
-  DATABASE_URL: z.url(),
-  REDIS_URL: z.url(),
-  SESSION_SECRET: z.string().min(32),
-  UPLOADS_DIR: z.string().default('./uploads'),
-  MAIL_HOST: z.string().optional(),
-  MAIL_PORT: z.coerce.number().int().default(465),
-  MAIL_SECURE: z
-    .string()
-    .default('true')
-    .transform((value) => value === 'true'),
-  MAIL_USER: z.string().optional(),
-  MAIL_PASS: z.string().optional(),
-  MAIL_FROM: z.string().optional(),
-  STORE_CURRENCY: z.string().default('BGN'),
-  STORE_LOCALE: z.string().default('bg-BG'),
-  // Доставка в minor units (MON-1). Празен ред в `.env` е „по подразбиране",
-  // не безплатна доставка — `coerce` би направил `''` на 0.
-  SHIPPING_COST_MINOR: z.preprocess(
-    (value) => (value === '' ? undefined : value),
-    z.coerce.number().int().min(0).default(590),
-  ),
-});
+const schema = z
+  .object({
+    NODE_ENV: z
+      .enum(['development', 'test', 'production'])
+      .default('development'),
+    APP_NAME: z.string().default('DCARDS'),
+    APP_URL: originUrl.default('http://localhost:3000'),
+    // Адресът върху картите (`/c/{id}`) — къс домейн, купен отделно; иначе `APP_URL`.
+    CARD_URL_BASE: originUrl.optional(),
+    DATABASE_URL: z.url(),
+    REDIS_URL: z.url(),
+    SESSION_SECRET: z.string().min(32),
+    UPLOADS_DIR: z.string().default('./uploads'),
+    MAIL_HOST: z.string().optional(),
+    MAIL_PORT: z.coerce.number().int().default(465),
+    MAIL_SECURE: z
+      .string()
+      .default('true')
+      .transform((value) => value === 'true'),
+    MAIL_USER: z.string().optional(),
+    MAIL_PASS: z.string().optional(),
+    MAIL_FROM: z.string().optional(),
+    // Копие на всяка нова поръчка (SHP-2c); празно = без копие.
+    MAIL_ADMIN_TO: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.email().optional(),
+    ),
+    STORE_CURRENCY: z.string().default('BGN'),
+    STORE_LOCALE: z.string().default('bg-BG'),
+    // Доставка в minor units (MON-1). Празен ред в `.env` е „по подразбиране",
+    // не безплатна доставка — `coerce` би направил `''` на 0.
+    SHIPPING_COST_MINOR: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.coerce.number().int().min(0).default(590),
+    ),
+  })
+  .refine(
+    (values) => !values.MAIL_HOST || values.MAIL_FROM !== undefined,
+    // Без `From` exim отказва или пренаписва; „отговорете на този имейл" няма адрес.
+    {
+      message: 'MAIL_FROM is required when MAIL_HOST is set',
+      path: ['MAIL_FROM'],
+    },
+  );
 
 export type Env = z.infer<typeof schema>;
 

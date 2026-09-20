@@ -43,6 +43,13 @@
       "when": 1789896013411,
       "tag": "0005_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789899740227,
+      "tag": "0006_cards_order",
+      "breakpoints": true
     }
   ]
 }

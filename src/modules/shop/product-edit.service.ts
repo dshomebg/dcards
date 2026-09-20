@@ -2,6 +2,8 @@
 
 import type { DbExecutor } from '@/modules/core';
 
+// Относително — barrel-ът на `core` отваря пул при импорт (виж `batch.service.ts`).
+import { isForeignKeyViolation } from '../core/db/errors';
 import {
   deleteProductById,
   deleteVariantsByIds,
@@ -131,10 +133,15 @@ export async function updateProduct(
   return toDto(updated, await findVariantsByProduct(executor, productId));
 }
 
+/** `restrict` от `order_items` (MON-3) → ясно съобщение, не мълчалив `isActive=false`. */
+function rethrowDbError(error: unknown): never {
+  if (isForeignKeyViolation(error)) throw new ProductError('has_orders');
+  rethrowUnique(error);
+}
+
 /**
  * Upsert по `id`, НЕ delete+insert: id-то на варианта има външна стойност
- * (SHP-2 `order_items`). При `restrict` от SHP-2 изтриването ще пада за
- * варианти с поръчки — тогава редакторът ще ги прави `isActive=false`.
+ * (SHP-2 `order_items`). Вариант с поръчки не се трие — `has_orders`.
  */
 export async function replaceVariants(
   executor: DbExecutor,
@@ -189,17 +196,21 @@ export async function replaceVariants(
       }
       return saved.map(toVariantDto);
     } catch (error) {
-      rethrowUnique(error);
+      rethrowDbError(error);
     }
   });
 }
 
-/** Вариантите падат по cascade. Несъществуващ → `product_not_found`. */
+/** Вариантите падат по cascade; с поръчки → `has_orders`. Несъществуващ → `product_not_found`. */
 export async function deleteProduct(
   executor: DbExecutor,
   productId: string,
 ): Promise<void> {
-  if (!(await deleteProductById(executor, productId))) {
-    throw new ProductError('product_not_found');
+  let deleted: boolean;
+  try {
+    deleted = await deleteProductById(executor, productId);
+  } catch (error) {
+    rethrowDbError(error);
   }
+  if (!deleted) throw new ProductError('product_not_found');
 }

@@ -31,7 +31,8 @@ export type ProductErrorCode =
   | 'sku_duplicate'
   | 'price_negative'
   | 'variant_foreign'
-  | 'product_not_found';
+  | 'product_not_found'
+  | 'has_orders';
 
 const MESSAGES: Readonly<Record<ProductErrorCode, string>> = {
   input_invalid: 'Има невалидни или твърде дълги полета в продукта.',
@@ -43,6 +44,8 @@ const MESSAGES: Readonly<Record<ProductErrorCode, string>> = {
   price_negative: 'Цената на вариант не може да е под нула.',
   variant_foreign: 'Вариантът не принадлежи на този продукт.',
   product_not_found: 'Продуктът не съществува.',
+  has_orders:
+    'Има поръчки с този продукт/вариант — маркирай го неактивен вместо да го изтриваш.',
 };
 
 /** `code` е за тестовете и редактора; `message` е за човека. */

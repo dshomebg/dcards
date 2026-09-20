@@ -2,14 +2,21 @@
 
 // Без auth: Zod → количка (празната не харчи лимит) → лимит (IP, после имейл)
 // → ключ срещу двоен submit → актор → `placeOrder` → токен за гост → празна
-// количка. `redirect` стои извън `try`.
+// количка → redirect; писмото излиза след отговора. `redirect` стои извън `try`.
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 
 import { loadCurrent } from '@/app/app/(protected)/current';
-import { db } from '@/modules/core';
-import { emptyCart, OrderError, placeOrder } from '@/modules/shop';
+import { db, env, sendMail } from '@/modules/core';
+import {
+  emptyCart,
+  orderConfirmationMail,
+  OrderError,
+  type PlacedOrder,
+  placeOrder,
+} from '@/modules/shop';
 
 import {
   acquireCheckoutLock,
@@ -49,16 +56,52 @@ function logUnexpected(where: string, error: unknown): void {
   );
 }
 
-/** Провал на Redis след commit не проваля поръчката — тя вече е записана. */
-async function afterCommit(number: string, guest: boolean): Promise<void> {
+/** Клиентът и (по избор) админът; `sendMail` не хвърля. Адресът не се нормализира. */
+async function notify(placed: PlacedOrder, to: string): Promise<void> {
+  const { APP_NAME, APP_URL, STORE_CURRENCY, STORE_LOCALE, MAIL_ADMIN_TO } =
+    env();
+  const options = {
+    appName: APP_NAME,
+    appUrl: APP_URL,
+    format: { currency: STORE_CURRENCY, locale: STORE_LOCALE },
+  };
+  // Паралелно: при паднал SMTP клиентът чака един timeout, не два.
+  await Promise.all([
+    sendMail({ to, ...orderConfirmationMail(placed, options) }),
+    MAIL_ADMIN_TO === undefined
+      ? Promise.resolve(false)
+      : sendMail({
+          to: MAIL_ADMIN_TO,
+          ...orderConfirmationMail(placed, { ...options, forAdmin: true }),
+        }),
+  ]);
+}
+
+interface AfterCommit {
+  readonly placed: PlacedOrder;
+  readonly guest: boolean;
+  readonly email: string;
+}
+
+/** Провал на Redis/SMTP след commit не проваля поръчката — тя вече е записана. */
+async function afterCommit({ placed, guest, email }: AfterCommit) {
   // Логнатият има достъп през org-а си; токен за него би надживял изхода.
   if (guest) {
     try {
-      await issueOrderViewToken(number);
+      await issueOrderViewToken(placed.number);
     } catch (error) {
       logUnexpected('placeOrderAction:token', error);
     }
   }
+  // След отговора: висящ SMTP не бива да държи бутона „Поръчай" (`after` върви
+  // и при `redirect`).
+  after(async () => {
+    try {
+      await notify(placed, email);
+    } catch (error) {
+      logUnexpected('placeOrderAction:mail', error);
+    }
+  });
   try {
     await writeCart(emptyCart());
   } catch (error) {
@@ -81,7 +124,7 @@ export async function placeOrderAction(
   const limited = await checkoutLimit(parsed.data.email);
   if (limited !== null) return failure(limited);
 
-  let number: string;
+  let placed: PlacedOrder;
   let guest: boolean;
   try {
     if (!(await acquireCheckoutLock())) return failure(BUSY);
@@ -91,12 +134,11 @@ export async function placeOrderAction(
       current === null
         ? null
         : { userId: current.user.id, orgId: current.org.id };
-    const placed = await placeOrder(db, {
+    placed = await placeOrder(db, {
       cart,
       ...toPlaceOrderInput(parsed.data),
       actor,
     });
-    number = placed.number;
   } catch (error) {
     await releaseCheckoutLock().catch(() => undefined);
     if (error instanceof OrderError) return failure(error.message);
@@ -104,8 +146,7 @@ export async function placeOrderAction(
     return failure(FAILED);
   }
 
-  // SHP-2c: sendOrderConfirmation(number) — след commit, преди redirect.
-  await afterCommit(number, guest);
+  await afterCommit({ placed, guest, email: parsed.data.email });
   revalidatePath('/', 'layout');
-  redirect(`/order/${number}`);
+  redirect(`/order/${placed.number}`);
 }

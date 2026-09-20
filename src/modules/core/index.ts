@@ -2,8 +2,13 @@ import { createLimiter } from './rate-limit/limiter';
 import { redis } from './redis/client';
 
 export { type Db, db, type DbExecutor } from './db/client';
-export { isUniqueViolation, uniqueViolationConstraint } from './db/errors';
+export {
+  isForeignKeyViolation,
+  isUniqueViolation,
+  uniqueViolationConstraint,
+} from './db/errors';
 export { type Env, env } from './env';
+export { type MailMessage, sendMail } from './mail/send';
 export { clientIpFrom } from './rate-limit/client-ip';
 export {
   createLimiter,
