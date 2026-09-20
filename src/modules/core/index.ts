@@ -9,11 +9,17 @@ export {
 } from './db/errors';
 export { type Env, env } from './env';
 export {
+  IMAGE_MAX_BYTES,
+  ImageError,
+  type ImageErrorCode,
   LOGO_MAX_BYTES,
   LOGO_MAX_SIDE,
-  LogoError,
-  type LogoErrorCode,
+  PHOTO_SIDE,
+  processImage,
   processLogo,
+  type ProcessOptions,
+  processPhoto,
+  toJpeg,
 } from './image';
 export { type MailMessage, sendMail } from './mail/send';
 export { clientIpFrom } from './rate-limit/client-ip';
@@ -32,9 +38,12 @@ export {
 export { redis } from './redis/client';
 export {
   createLogoKey,
+  createObjectKey,
   deleteObject,
   isObjectKey,
   OBJECT_KEY_PATTERN,
+  OBJECT_KINDS,
+  type ObjectKind,
   putObject,
   readObject,
 } from './storage';

@@ -9,16 +9,19 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
 import { type ProfileFormValues, THEME_OPTIONS } from './schema';
+import { ThemeFields } from './theme-fields';
 
 interface Props {
   readonly form: UseFormReturn<ProfileFormValues>;
+  readonly customTheme: boolean;
+  readonly hasLogo: boolean;
 }
 
 // Смяната на адреса не пипа чипа (`/c/{card_id}`), но чупи споделеното и QR-а.
 const SLUG_HINT =
   'Чипът на картата не зависи от адреса. Споделени линкове и вече свалени QR кодове ще спрат да работят.';
 
-export function ProfileFields({ form }: Props) {
+export function ProfileFields({ form, customTheme, hasLogo }: Props) {
   const {
     register,
     control,
@@ -97,6 +100,7 @@ export function ProfileFields({ form }: Props) {
             />
           )}
         />
+        <ThemeFields form={form} customTheme={customTheme} hasLogo={hasLogo} />
       </FormSection>
 
       <FormSection title="Видимост">

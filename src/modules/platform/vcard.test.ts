@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PublicProfile, PublicProfileLink } from './profile.schema';
-import { buildVCard, escapeVCardText, vcardContentDisposition } from './vcard';
+import {
+  buildVCard,
+  escapeVCardText,
+  foldLine,
+  vcardContentDisposition,
+} from './vcard';
 
 const URL = 'https://dcards.bg/ivan-petrov';
 
@@ -13,7 +18,14 @@ function profile(overrides: Partial<PublicProfile> = {}): PublicProfile {
     title: 'Управител',
     company: 'Демо ООД',
     bio: 'Здравей.',
-    theme: { preset: 'sand', primaryColor: null, layout: 'default' },
+    photoKey: null,
+    logoKey: null,
+    theme: {
+      preset: 'sand',
+      primaryColor: null,
+      logoBackground: false,
+      layout: 'default',
+    },
     links: [],
     ...overrides,
   };
@@ -26,6 +38,12 @@ const link = (type: PublicProfileLink['type'], value: string) => ({
 });
 
 const lines = (p: PublicProfile) => buildVCard(p, URL).split('\r\n');
+
+/** RFC 2426 § 2.6: CRLF + интервал е продължение на предния ред. */
+const unfold = (out: string) => out.replaceAll('\r\n ', '');
+
+const octets = (out: string) =>
+  out.split('\r\n').map((line) => Buffer.byteLength(line));
 
 describe('buildVCard', () => {
   it('frames the card and uses CRLF only', () => {
@@ -129,6 +147,58 @@ describe('buildVCard', () => {
     );
     expect(disposition).toContain("UTF-8''O%27Brien%20%28Jr.%29%20Star%2A.vcf");
     expect(disposition.split("UTF-8''")[1]).not.toMatch(/['()*]/);
+  });
+});
+
+describe('foldLine', () => {
+  it('leaves a short line alone and folds a long one under 75 octets', () => {
+    expect(foldLine('FN:Иван')).toEqual(['FN:Иван']);
+    const folded = foldLine(`NOTE:${'a'.repeat(200)}`);
+    expect(folded).toHaveLength(3);
+    expect(folded.every((l) => Buffer.byteLength(l) <= 75)).toBe(true);
+    expect(folded.slice(1).every((l) => l.startsWith(' '))).toBe(true);
+    expect(folded.map((l) => l.replace(/^ /, '')).join('')).toBe(
+      `NOTE:${'a'.repeat(200)}`,
+    );
+  });
+
+  it('never splits a multibyte character', () => {
+    const note = `NOTE:${'я'.repeat(100)}`;
+    const folded = foldLine(note);
+    for (const line of folded) {
+      expect(Buffer.byteLength(line)).toBeLessThanOrEqual(75);
+      expect(line.includes('�')).toBe(false);
+    }
+    expect(folded.map((l) => l.replace(/^ /, '')).join('')).toBe(note);
+  });
+});
+
+describe('buildVCard — folding and PHOTO', () => {
+  const long = 'Дълга кирилска бележка. '.repeat(10);
+
+  it('keeps every line at 75 octets or less and unfolds to the original', () => {
+    const out = buildVCard(profile({ bio: long }), URL);
+    expect(Math.max(...octets(out))).toBeLessThanOrEqual(75);
+    expect(unfold(out)).toContain(`NOTE:${escapeVCardText(long)}\r\n`);
+  });
+
+  it('emits PHOTO as base64 JPEG that decodes back to the bytes', () => {
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...Array(200).fill(7)]);
+    const out = buildVCard(profile(), URL, { jpeg });
+    expect(Math.max(...octets(out))).toBeLessThanOrEqual(75);
+    const line = unfold(out)
+      .split('\r\n')
+      .find((l) => l.startsWith('PHOTO;ENCODING=b;TYPE=JPEG:'));
+    expect(line).toBeDefined();
+    const b64 = line?.slice('PHOTO;ENCODING=b;TYPE=JPEG:'.length) ?? '';
+    expect(Buffer.from(b64, 'base64').equals(jpeg)).toBe(true);
+    expect(unfold(out).indexOf('PHOTO')).toBeLessThan(
+      unfold(out).indexOf('END:VCARD'),
+    );
+  });
+
+  it('has no PHOTO line without a jpeg', () => {
+    expect(buildVCard(profile(), URL)).not.toContain('PHOTO');
   });
 });
 

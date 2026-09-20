@@ -57,6 +57,13 @@
       "when": 1789903710175,
       "tag": "0007_scans_source_org",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789918016660,
+      "tag": "0008_org_invitations",
+      "breakpoints": true
     }
   ]
 }

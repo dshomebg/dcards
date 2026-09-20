@@ -38,7 +38,12 @@ beforeEach(() => {
     title: null,
     company: null,
     bio: null,
-    theme: { preset: 'light', primaryColor: null, layout: 'default' },
+    theme: {
+      preset: 'light',
+      primaryColor: null,
+      logoBackground: false,
+      layout: 'default',
+    },
     links: [],
   });
 });

@@ -140,10 +140,12 @@ export async function disableCardAction(
 ): Promise<CardActionResult> {
   const id = cardIdSchema.safeParse(cardId);
   if (!id.success) return failure(NOT_FOUND);
+  // Необратимо (чипът е раздаден) — както изтриването на профил, само owner.
   return done(
-    await runCardAction('disableCardAction', byUser, ({ org }) =>
-      disableCardByOrg(db, { cardId: id.data, orgId: org.id }),
-    ),
+    await runCardAction('disableCardAction', byUser, ({ org, role }) => {
+      if (role !== 'owner') throw new CardError('owner_only');
+      return disableCardByOrg(db, { cardId: id.data, orgId: org.id });
+    }),
   );
 }
 

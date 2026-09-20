@@ -10,6 +10,7 @@ import { profileLinks, profiles } from './profile.schema';
 import {
   createProfile,
   findPublicProfileBySlug,
+  findPublicProfileRecordBySlug,
   listProfiles,
   ProfileError,
 } from './profile.service';
@@ -73,7 +74,12 @@ describe('createProfile', () => {
     expect(profile).toMatchObject({
       slug: 'ivan-petrov',
       isPublic: true,
-      theme: { preset: 'light', primaryColor: null, layout: 'default' },
+      theme: {
+        preset: 'light',
+        primaryColor: null,
+        logoBackground: false,
+        layout: 'default',
+      },
     });
     const links = await db
       .select()
@@ -157,7 +163,14 @@ describe('createProfile', () => {
     const cases = [
       { firstName: '' },
       { bio: 'x'.repeat(601) },
-      { theme: { preset: 'neon', primaryColor: null, layout: 'default' } },
+      {
+        theme: {
+          preset: 'neon',
+          primaryColor: null,
+          logoBackground: false,
+          layout: 'default',
+        },
+      },
       { theme: { preset: 'light', primaryColor: 'red', layout: 'default' } },
       { links: [{ type: 'phone', value: '' }] },
     ] as const;
@@ -235,6 +248,80 @@ describe('findPublicProfileBySlug', () => {
 
     const found = await findPublicProfileBySlug(db, 'broken-theme');
     expect(found?.theme.preset).toBe('light');
+  });
+
+  it('an old row without logoBackground reads as false', async () => {
+    const orgId = await proOrg();
+    await createProfile(db, { orgId, slug: 'old-theme', ...base });
+    await db
+      .update(profiles)
+      .set({
+        theme: { preset: 'dark', primaryColor: '#8b1e3f', layout: 'default' },
+      } as never)
+      .where(eq(profiles.slug, 'old-theme'));
+
+    const found = await findPublicProfileBySlug(db, 'old-theme');
+    expect(found?.theme).toEqual({
+      preset: 'dark',
+      primaryColor: '#8b1e3f',
+      logoBackground: false,
+      layout: 'default',
+    });
+  });
+
+  it('Pro: keeps the custom theme and drops the branding', async () => {
+    const orgId = await proOrg();
+    await createProfile(db, {
+      orgId,
+      slug: 'pro-theme',
+      ...base,
+      theme: {
+        preset: 'sand',
+        primaryColor: '#8B1E3F',
+        logoBackground: true,
+        layout: 'default',
+      },
+    });
+    const record = await findPublicProfileRecordBySlug(db, 'pro-theme');
+    expect(record?.branding).toBe(false);
+    // Нормализиран към малки букви при валидацията.
+    expect(record?.profile.theme).toMatchObject({
+      primaryColor: '#8b1e3f',
+      logoBackground: true,
+    });
+  });
+
+  it('Free and expired Pro: Pro fields are hidden, the row keeps them, branding stays', async () => {
+    const orgs = [await freeOrg(), await proOrg(new Date(Date.now() - 1000))];
+    for (const [index, orgId] of orgs.entries()) {
+      const slug = `gated-${index}`;
+      await createProfile(db, {
+        orgId,
+        slug,
+        ...base,
+        theme: {
+          preset: 'dark',
+          primaryColor: '#8b1e3f',
+          logoBackground: true,
+          layout: 'default',
+        },
+      });
+      const record = await findPublicProfileRecordBySlug(db, slug);
+      expect(record?.branding).toBe(true);
+      expect(record?.profile.theme).toEqual({
+        preset: 'dark',
+        primaryColor: null,
+        logoBackground: false,
+        layout: 'default',
+      });
+      const row = (
+        await db.select().from(profiles).where(eq(profiles.slug, slug))
+      )[0];
+      expect(row?.theme).toMatchObject({
+        primaryColor: '#8b1e3f',
+        logoBackground: true,
+      });
+    }
   });
 });
 

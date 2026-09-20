@@ -45,7 +45,10 @@ export const profileLinkTypeEnum = pgEnum(
 /** `layout` има една стойност засега — за да не иска миграция, когато дойде втора. */
 export interface ProfileTheme {
   readonly preset: 'light' | 'dark' | 'sand';
+  /** Pro: `#rrggbb` с малки букви; `null` = цветът на preset-а. */
   readonly primaryColor: string | null;
+  /** Pro: логото като воден знак под съдържанието. */
+  readonly logoBackground: boolean;
   readonly layout: 'default';
 }
 
@@ -119,6 +122,9 @@ export interface PublicProfile {
   readonly title: string | null;
   readonly company: string | null;
   readonly bio: string | null;
+  /** Ключове в storage-а (`photos|logos/<uuid>.webp`), не URL — превръща ги `uploadUrl`. */
+  readonly photoKey: string | null;
+  readonly logoKey: string | null;
   readonly theme: ProfileTheme;
   readonly links: readonly PublicProfileLink[];
 }

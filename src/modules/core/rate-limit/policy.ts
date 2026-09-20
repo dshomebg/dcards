@@ -36,6 +36,12 @@ export const RATE_POLICY = {
   checkoutEmail: { limit: 3, windowSec: 3600 },
   // Качване на лого без auth: всяко е sharp + запис на диска — 10/час на IP.
   uploadIp: { limit: 10, windowSec: 3600 },
+  // Снимка/лого на профил от влязъл: sharp + диск на всяко — 20/час на потребител.
+  imageUploadUser: { limit: 20, windowSec: 3600 },
+  // Покана = писмо към чужд SMTP — 10/час на org, брои и „изпрати пак".
+  inviteOrg: { limit: 10, windowSec: 3600 },
+  // `/invite` е без auth и чете базата на всеки токен — таван по IP.
+  inviteIp: { limit: 30, windowSec: 900 },
 } as const satisfies Record<string, RatePolicy>;
 
 export const rateKey = {
@@ -58,6 +64,9 @@ export const rateKey = {
   checkoutIp: (ip: string) => `rl:checkout:ip:${ip}`,
   checkoutEmail: (email: string) => `rl:checkout:email:${email.toLowerCase()}`,
   uploadIp: (ip: string) => `rl:upload:ip:${ip}`,
+  imageUploadUser: (userId: string) => `rl:image-upload:user:${userId}`,
+  inviteOrg: (orgId: string) => `rl:invite:org:${orgId}`,
+  inviteIp: (ip: string) => `rl:invite:ip:${ip}`,
 } as const;
 
 export function tooManyMessage(retryAfterSec: number): string {

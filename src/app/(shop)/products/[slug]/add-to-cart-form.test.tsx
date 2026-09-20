@@ -108,7 +108,7 @@ describe('AddToCartForm — logo', () => {
     pick(new File(['png'], 'logo.png', { type: 'image/png' }));
 
     const preview = await screen.findByRole<HTMLImageElement>('img', {
-      name: 'Качено лого',
+      name: 'Лого',
     });
     expect(preview.getAttribute('src')).toBe(`/api/uploads/${KEY}`);
     expect(uploadLogoAction).toHaveBeenCalledTimes(1);
@@ -145,7 +145,7 @@ describe('AddToCartForm — logo', () => {
     uploadLogoAction.mockResolvedValue({ ok: true, key: KEY });
     render(<AddToCartForm variants={variants} format={format} />);
     pick(new File(['png'], 'logo.png', { type: 'image/png' }));
-    await screen.findByRole('img', { name: 'Качено лого' });
+    await screen.findByRole('img', { name: 'Лого' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Премахни' }));
     expect(screen.queryByRole('img')).toBeNull();

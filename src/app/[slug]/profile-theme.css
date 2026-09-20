@@ -32,7 +32,24 @@
 
 /* Фонът покрива целия екран — иначе при скрол се показва белият body. */
 [data-profile-theme] {
+  position: relative;
   min-height: 100vh;
   background-color: var(--profile-bg);
   color: var(--profile-ink);
+}
+
+/* Pro: логото като воден знак (`--profile-logo` идва inline). `isolation` +
+   отрицателен z-index го слагат под съдържанието, но над фона на корена. */
+[data-profile-logo-bg] {
+  isolation: isolate;
+}
+
+[data-profile-logo-bg]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--profile-logo) top center / 70% no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
 }

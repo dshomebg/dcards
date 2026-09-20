@@ -57,7 +57,12 @@ async function seedDemo(email: string): Promise<'created' | 'exists'> {
       title: 'Управител',
       company: 'Демо ООД',
       bio: 'NFC визитки и дигитални профили за бизнеса.',
-      theme: { preset: 'sand', primaryColor: null, layout: 'default' },
+      theme: {
+        preset: 'sand',
+        primaryColor: null,
+        logoBackground: false,
+        layout: 'default',
+      },
       links: [
         { type: 'phone', value: '+359 88 123 4567' },
         { type: 'email', value: 'ivan@demo.bg' },

@@ -22,8 +22,11 @@ export default async function RegisterPage(props: Props) {
   if (user !== null) {
     redirect(safeNextPath(next) ?? '/app');
   }
+  const safeNext = safeNextPath(next);
   const loginHref =
-    safeNextPath(next) === null ? '/login' : `/login?next=${next}`;
+    safeNext === null
+      ? '/login'
+      : `/login?next=${encodeURIComponent(safeNext)}`;
 
   return (
     <main className="flex min-h-dvh items-center justify-center px-6 py-12">

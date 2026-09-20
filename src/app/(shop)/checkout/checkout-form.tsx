@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { logoUrl } from '@/lib/logo-url';
+import { uploadUrl } from '@/lib/upload-url';
 import {
   type CartView,
   COURIER_LABELS,
@@ -63,7 +63,7 @@ function OrderSummary({
             <span className="flex items-center gap-hint">
               {line.personalization.logoKey !== null && (
                 <img
-                  src={logoUrl(line.personalization.logoKey)}
+                  src={uploadUrl(line.personalization.logoKey)}
                   alt="Лого"
                   width={32}
                   height={32}

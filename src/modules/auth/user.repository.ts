@@ -1,10 +1,17 @@
 // Достъп до `users` — единственото място в модула, което пише SQL.
 
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 
+import { likePattern } from '@/lib/like-pattern';
 import type { DbExecutor } from '@/modules/core';
 
-import { type NewUser, type User, users } from './user.schema';
+import {
+  type NewUser,
+  type PublicUser,
+  toPublicUser,
+  type User,
+  users,
+} from './user.schema';
 
 /**
  * Търси през `lower(email)`, точно както е уникалният индекс — друго условие
@@ -81,4 +88,34 @@ export async function markEmailVerified(
     .returning({ id: users.id });
 
   return rows.length > 0;
+}
+
+export interface SearchUsersInput {
+  readonly query?: string;
+  readonly limit: number;
+}
+
+/** За админа: най-новите първи, без хеша (`toPublicUser`). */
+export async function searchUsers(
+  executor: DbExecutor,
+  input: SearchUsersInput,
+): Promise<PublicUser[]> {
+  const pattern =
+    input.query === undefined || input.query === ''
+      ? undefined
+      : likePattern(input.query);
+  const rows = await executor
+    .select()
+    .from(users)
+    .where(
+      pattern === undefined
+        ? undefined
+        : or(
+            sql`${users.email} ILIKE ${pattern} ESCAPE '\\'`,
+            sql`${users.name} ILIKE ${pattern} ESCAPE '\\'`,
+          ),
+    )
+    .orderBy(desc(users.createdAt), desc(users.id))
+    .limit(input.limit);
+  return rows.map(toPublicUser);
 }

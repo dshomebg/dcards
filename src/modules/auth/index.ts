@@ -30,6 +30,7 @@ export {
   signInSchema,
 } from './schema';
 export { revokeOtherSessions } from './session';
+export { searchUsers, type SearchUsersInput } from './user.repository';
 export { type PublicUser } from './user.schema';
 export {
   changePassword,

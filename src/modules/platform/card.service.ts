@@ -21,7 +21,8 @@ export type CardErrorCode =
   | 'profile_not_found'
   | 'batch_not_found'
   | 'batch_short'
-  | 'order_quota';
+  | 'order_quota'
+  | 'owner_only';
 
 const MESSAGES: Readonly<Record<CardErrorCode, string>> = {
   input_invalid: 'Има невалидни полета.',
@@ -37,6 +38,7 @@ const MESSAGES: Readonly<Record<CardErrorCode, string>> = {
   batch_short:
     'В партидата няма толкова свободни карти — нито една не е взета.',
   order_quota: 'Картите надхвърлят поръчаните бройки.',
+  owner_only: 'Само собственикът може да деактивира карта.',
 };
 
 /** `code` е за тестовете и екраните; `message` е за човека. */

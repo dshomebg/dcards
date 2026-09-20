@@ -2,10 +2,12 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { LogoutButton } from '@/components/logout-button';
-import { env } from '@/modules/core';
+import { db, env } from '@/modules/core';
+import { listMembershipsForUser } from '@/modules/platform';
 
 import { AppNav } from './app-nav';
 import { requireCurrent } from './current';
+import { OrgSwitcher } from './org-switcher';
 import { signOutAndClear } from './sign-out';
 
 /**
@@ -15,7 +17,8 @@ import { signOutAndClear } from './sign-out';
 export default async function ProtectedAppLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  const { user } = await requireCurrent();
+  const { user, org } = await requireCurrent();
+  const memberships = await listMembershipsForUser(db, user.id);
 
   return (
     <div className="flex min-h-dvh flex-col bg-page">
@@ -25,6 +28,15 @@ export default async function ProtectedAppLayout({
         </Link>
 
         <div className="flex min-w-0 shrink-0 items-center gap-3">
+          {memberships.length > 1 && (
+            <OrgSwitcher
+              currentId={org.id}
+              options={memberships.map((m) => ({
+                id: m.orgId,
+                name: m.orgName,
+              }))}
+            />
+          )}
           <span className="text-text-muted truncate text-sm">{user.name}</span>
           <LogoutButton action={signOutAndClear} />
         </div>

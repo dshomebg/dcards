@@ -8,8 +8,14 @@ const dir = vi.hoisted(() => ({ path: '' }));
 
 vi.mock('../env', () => ({ env: () => ({ UPLOADS_DIR: dir.path }) }));
 
-const { createLogoKey, deleteObject, isObjectKey, putObject, readObject } =
-  await import('./local');
+const {
+  createLogoKey,
+  createObjectKey,
+  deleteObject,
+  isObjectKey,
+  putObject,
+  readObject,
+} = await import('./local');
 
 beforeAll(async () => {
   dir.path = await mkdtemp(join(tmpdir(), 'dcards-storage-'));
@@ -26,12 +32,19 @@ describe('storage keys', () => {
     expect(isObjectKey(key)).toBe(true);
   });
 
+  it('generates a photo key under its own folder', () => {
+    const key = createObjectKey('photos');
+    expect(key).toMatch(/^photos\/[0-9a-f-]{36}\.webp$/);
+    expect(isObjectKey(key)).toBe(true);
+  });
+
   it('refuses traversal, other prefixes and other extensions', () => {
     for (const bad of [
       '../x',
       'logos/../../etc/passwd',
       'logos/x.webp',
-      'photos/00000000-0000-0000-0000-000000000000.webp',
+      'photos/../x',
+      'avatars/00000000-0000-0000-0000-000000000000.webp',
       'logos/00000000-0000-0000-0000-000000000000.png',
       'logos/00000000-0000-0000-0000-000000000000.webp/../x',
     ]) {
@@ -46,6 +59,15 @@ describe('putObject / readObject / deleteObject', () => {
     await putObject(key, Buffer.from('webp-bytes'));
     expect((await readFile(join(dir.path, key))).toString()).toBe('webp-bytes');
     expect((await readObject(key))?.toString()).toBe('webp-bytes');
+  });
+
+  it('keeps the two kinds in separate folders', async () => {
+    const key = createObjectKey('photos');
+    await putObject(key, Buffer.from('photo-bytes'));
+    expect((await readFile(join(dir.path, key))).toString()).toBe(
+      'photo-bytes',
+    );
+    expect(key.startsWith('photos/')).toBe(true);
   });
 
   it('returns null for a missing file and for a bad key', async () => {

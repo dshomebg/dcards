@@ -1,7 +1,13 @@
 export {
+  IMAGE_MAX_BYTES,
+  ImageError,
+  type ImageErrorCode,
   LOGO_MAX_BYTES,
   LOGO_MAX_SIDE,
-  LogoError,
-  type LogoErrorCode,
+  PHOTO_SIDE,
+  processImage,
   processLogo,
-} from './logo';
+  type ProcessOptions,
+  processPhoto,
+  toJpeg,
+} from './process';

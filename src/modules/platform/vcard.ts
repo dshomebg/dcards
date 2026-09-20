@@ -1,6 +1,6 @@
 // vCard 3.0 на ръка, без библиотека. Всяка потребителска стойност минава през
-// `escapeVCardText`; URL/tel идват само от `linkHref` (ARC-7). Folding на 75
-// октета — едва с `PHOTO` (прието в PLT-3).
+// `escapeVCardText`; URL/tel идват само от `linkHref` (ARC-7). Всеки ред се
+// сгъва на 75 октета (RFC 2426 § 2.6) — `PHOTO` е base64 от няколко KB.
 
 import { linkHref } from './link-href';
 import type { ProfileLinkType, PublicProfile } from './profile.schema';
@@ -99,7 +99,40 @@ function addressLines(links: PublicProfile['links']): string[] {
     .map((link) => `ADR;TYPE=WORK:;;${escapeVCardText(link.value.trim())};;;;`);
 }
 
-export function buildVCard(profile: PublicProfile, profileUrl: string): string {
+const MAX_OCTETS = 75;
+
+/**
+ * Реже по знаци (code points), мери в октети: многобайтов знак не се цепи.
+ * Продълженията носят водещ интервал, който също влиза в 75-те.
+ */
+export function foldLine(line: string): string[] {
+  const out: string[] = [];
+  let current = '';
+  let octets = 0;
+  for (const char of line) {
+    const size = Buffer.byteLength(char);
+    if (octets + size > MAX_OCTETS) {
+      out.push(current);
+      current = ' ';
+      octets = 1;
+    }
+    current += char;
+    octets += size;
+  }
+  out.push(current);
+  return out;
+}
+
+export interface VCardOptions {
+  /** JPEG байтове за `PHOTO;ENCODING=b;TYPE=JPEG`; без тях редът липсва. */
+  readonly jpeg?: Buffer;
+}
+
+export function buildVCard(
+  profile: PublicProfile,
+  profileUrl: string,
+  options: VCardOptions = {},
+): string {
   const first = escapeVCardText(profile.firstName);
   const last = escapeVCardText(profile.lastName);
   const lines = [
@@ -119,9 +152,11 @@ export function buildVCard(profile: PublicProfile, profileUrl: string): string {
     ...addressLines(profile.links),
   );
   if (profile.bio !== null) lines.push(`NOTE:${escapeVCardText(profile.bio)}`);
-  // PHOTO;ENCODING=b;TYPE=JPEG: — когато има storage; тогава folding става задължителен.
+  if (options.jpeg !== undefined) {
+    lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${options.jpeg.toString('base64')}`);
+  }
   lines.push('END:VCARD');
-  return lines.join(CRLF) + CRLF;
+  return lines.flatMap(foldLine).join(CRLF) + CRLF;
 }
 
 // RFC 8187 не допуска `!'()*`, а `encodeURIComponent` ги оставя — кодират се допълнително.

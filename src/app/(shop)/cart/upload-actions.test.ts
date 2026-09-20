@@ -12,7 +12,7 @@ vi.mock('@/modules/core', async () => ({
   ...storage,
   ...(await vi.importActual('@/modules/core/rate-limit/policy')),
   ...(await vi.importActual('@/modules/core/rate-limit/client-ip')),
-  ...(await vi.importActual('@/modules/core/image/logo')),
+  ...(await vi.importActual('@/modules/core/image/process')),
   createLogoKey: () => 'logos/00000000-0000-4000-8000-000000000000.webp',
 }));
 vi.mock('next/headers', () => ({

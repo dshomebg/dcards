@@ -5,8 +5,8 @@
 
 import {
   createLogoKey,
+  ImageError,
   LOGO_MAX_BYTES,
-  LogoError,
   processLogo,
   putObject,
 } from '@/modules/core';
@@ -48,7 +48,7 @@ export async function uploadLogoAction(
     await putObject(key, webp);
     return { ok: true, key };
   } catch (error) {
-    if (error instanceof LogoError) return failure(error.message);
+    if (error instanceof ImageError) return failure(error.message);
     logUnexpected(error);
     return failure(FAILED);
   }

@@ -4,6 +4,7 @@ import {
   type ProfileEditDto,
   profileLinkInputSchema,
   type ProfileTheme,
+  profileThemeSchema,
   slugSchema,
   updateProfileInputSchema,
 } from '@/modules/platform';
@@ -26,6 +27,8 @@ export const profileFormSchema = updateProfileInputSchema.extend({
   title: optional(120),
   company: optional(120),
   bio: optional(600),
+  // Без `default`: формата винаги носи булева стойност, а вход = изход за resolver-а.
+  theme: profileThemeSchema.extend({ logoBackground: z.boolean() }),
   links: z.array(profileLinkFormSchema).max(50, 'До 50 линка.'),
 });
 

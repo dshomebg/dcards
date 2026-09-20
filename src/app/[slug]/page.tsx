@@ -79,6 +79,7 @@ export default async function ProfilePage(props: Props) {
         profile={record.profile}
         appName={APP_NAME}
         appUrl={APP_URL}
+        branding={record.branding}
       />
     </main>
   );

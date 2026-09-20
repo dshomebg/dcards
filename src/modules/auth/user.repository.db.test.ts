@@ -7,6 +7,7 @@ import {
   findById,
   insert,
   markEmailVerified,
+  searchUsers,
 } from './user.repository';
 
 afterAll(async () => {
@@ -66,5 +67,33 @@ describe('user.repository', () => {
     expect(
       await markEmailVerified(db, '019969a0-0000-7000-8000-0000000000ff'),
     ).toBe(false);
+  });
+
+  it('searches by email or name without exposing the hash; escapes wildcards', async () => {
+    await insert(db, {
+      email: 'search.one@example.bg',
+      passwordHash: 'secret',
+      name: 'Първи 100%',
+    });
+    await insert(db, {
+      email: 'search.two@example.bg',
+      passwordHash: 'secret',
+      name: 'Втори',
+    });
+
+    const byEmail = await searchUsers(db, { query: 'SEARCH.TWO', limit: 10 });
+    expect(byEmail.map((user) => user.name)).toEqual(['Втори']);
+    expect(byEmail[0]).not.toHaveProperty('passwordHash');
+
+    const byName = await searchUsers(db, { query: 'първи', limit: 10 });
+    expect(byName.map((user) => user.email)).toEqual(['search.one@example.bg']);
+
+    const literal = await searchUsers(db, { query: '%', limit: 10 });
+    expect(literal.map((user) => user.email)).toEqual([
+      'search.one@example.bg',
+    ]);
+
+    const all = await searchUsers(db, { query: 'search.', limit: 1 });
+    expect(all).toHaveLength(1);
   });
 });

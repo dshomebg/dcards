@@ -5,6 +5,7 @@ import type * as Platform from '@/modules/platform';
 const auth = vi.hoisted(() => ({ getCurrentUser: vi.fn() }));
 const platform = vi.hoisted(() => ({
   findPersonalOrganizationByOwner: vi.fn(),
+  findMembership: vi.fn(),
   isOrgMember: vi.fn(),
   updateProfile: vi.fn(),
   replaceProfileLinks: vi.fn(),
@@ -16,11 +17,17 @@ const rateLimit = vi.hoisted(() => ({
 
 // Barrel-ът на `auth` носи `server-only`; `core` отваря пул при импорт.
 vi.mock('@/modules/auth', () => auth);
+const images = vi.hoisted(() => ({ deleteQuietly: vi.fn() }));
+vi.mock('./image-actions', () => images);
 vi.mock('@/modules/core', async () => ({
   db: { transaction: (fn: (tx: object) => unknown) => fn({}) },
   rateLimit,
   ...(await vi.importActual('@/modules/core/rate-limit/policy')),
 }));
+const currentOrg = vi.hoisted(() => ({
+  readCurrentOrgId: vi.fn().mockResolvedValue(null),
+}));
+vi.mock('../../current-org', () => currentOrg);
 vi.mock('@/modules/platform', async (importOriginal) => ({
   ...(await importOriginal<typeof Platform>()),
   ...platform,
@@ -49,7 +56,12 @@ const input = {
   title: '',
   company: 'Демо',
   bio: '',
-  theme: { preset: 'dark', primaryColor: null, layout: 'default' },
+  theme: {
+    preset: 'dark',
+    primaryColor: null,
+    logoBackground: false,
+    layout: 'default',
+  },
   isPublic: true,
   links: [
     { type: 'email', label: '', value: 'k@x.bg', isVisible: true },
@@ -65,6 +77,8 @@ const updated = {
   title: null,
   company: 'Демо',
   bio: null,
+  photoKey: null,
+  logoKey: null,
   theme: input.theme,
   isPublic: true,
   updatedAt: new Date(),
@@ -77,10 +91,13 @@ const savedLinks = [
 beforeEach(() => {
   auth.getCurrentUser.mockReset().mockResolvedValue(user);
   platform.findPersonalOrganizationByOwner.mockReset().mockResolvedValue(org);
+  platform.findMembership.mockReset().mockResolvedValue(null);
   platform.isOrgMember.mockReset().mockResolvedValue(true);
   platform.updateProfile.mockReset().mockResolvedValue(updated);
   platform.replaceProfileLinks.mockReset().mockResolvedValue(savedLinks);
-  platform.deleteProfile.mockReset().mockResolvedValue(undefined);
+  platform.deleteProfile
+    .mockReset()
+    .mockResolvedValue({ photoKey: 'photos/a.webp', logoKey: null });
   rateLimit.consume.mockClear();
   rateLimit.consume.mockResolvedValue({ allowed: true, retryAfterSec: 0 });
 });
@@ -185,6 +202,18 @@ describe('saveProfileAction', () => {
 });
 
 describe('deleteProfileAction', () => {
+  it('refuses an editor: only the owner deletes profiles', async () => {
+    // Cookie към org, в която потребителят е editor (ORG-1).
+    currentOrg.readCurrentOrgId.mockResolvedValue(org.id);
+    platform.findMembership.mockResolvedValue({ org, role: 'editor' });
+    const result = await deleteProfileAction(profileId);
+    expect(result).toEqual({
+      ok: false,
+      message: 'Само собственикът може да изтрие профил.',
+    });
+    expect(platform.deleteProfile).not.toHaveBeenCalled();
+  });
+
   it('refuses a limited user before touching the org', async () => {
     rateLimit.consume.mockResolvedValue({ allowed: false, retryAfterSec: 20 });
     const result = await deleteProfileAction(profileId);
@@ -223,5 +252,8 @@ describe('deleteProfileAction', () => {
       org.id,
       profileId,
     );
+    // Файлът със снимката пада заедно с реда — лице не остава на диска.
+    expect(images.deleteQuietly).toHaveBeenCalledWith('photos/a.webp');
+    expect(images.deleteQuietly).toHaveBeenCalledWith(null);
   });
 });

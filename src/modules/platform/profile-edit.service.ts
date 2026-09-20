@@ -7,12 +7,14 @@ import type { DbExecutor } from '@/modules/core';
 
 import { can } from './plan';
 import {
+  type DeletedProfileKeys,
   deleteLinksByProfile,
   deleteProfileByOrgAndId,
   findLinksByProfile,
   findProfileByOrgAndId,
   insertProfileLinks,
   lockOrganization,
+  replaceProfileImageKey,
   touchProfile,
   updateProfileByOrgAndId,
 } from './profile.repository';
@@ -27,9 +29,9 @@ import {
   isUniqueViolation,
   ProfileError,
   profileLinksInputSchema,
-  safeTheme,
   updateProfileInputSchema,
 } from './profile.service';
+import { mergeThemeForPlan, safeTheme } from './profile-theme';
 
 export interface ProfileEditLinkDto {
   readonly id: string;
@@ -40,7 +42,7 @@ export interface ProfileEditLinkDto {
   readonly sortOrder: number;
 }
 
-/** Каквото вижда редакторът — изрични полета (DAT-7); без `photoKey`/`logoKey`. */
+/** Каквото вижда редакторът — изрични полета (DAT-7). */
 export interface ProfileEditDto {
   readonly id: string;
   readonly slug: string;
@@ -49,6 +51,8 @@ export interface ProfileEditDto {
   readonly title: string | null;
   readonly company: string | null;
   readonly bio: string | null;
+  readonly photoKey: string | null;
+  readonly logoKey: string | null;
   readonly theme: ProfileTheme;
   readonly isPublic: boolean;
   readonly updatedAt: Date;
@@ -81,6 +85,8 @@ function toDto(
     title: profile.title,
     company: profile.company,
     bio: profile.bio,
+    photoKey: profile.photoKey,
+    logoKey: profile.logoKey,
     theme: safeTheme(profile.theme),
     isPublic: profile.isPublic,
     updatedAt: profile.updatedAt,
@@ -99,9 +105,24 @@ export async function getProfileForEdit(
   return toDto(profile, await findLinksByProfile(executor, profileId));
 }
 
+/** Темата за запис: Pro полетата минават само с активен Pro, иначе остават от реда. */
+async function gatedTheme(
+  executor: DbExecutor,
+  orgId: string,
+  profileId: string,
+  input: ProfileTheme,
+): Promise<ProfileTheme> {
+  // `FOR UPDATE` на org-а: същият ред на заключване като `replaceProfileLinks`.
+  const org = await lockOrganization(executor, orgId);
+  if (org === null) throw new ProfileError('org_not_found');
+  const current = await findProfileByOrgAndId(executor, orgId, profileId);
+  if (current === null) throw new ProfileError('profile_not_found');
+  return mergeThemeForPlan(org, input, safeTheme(current.theme));
+}
+
 /**
- * Без предварително четене и без `slugExists`: уникалният индекс е проверката
- * (няма TOCTOU). `updatedAt` идва от `$onUpdate`.
+ * Без `slugExists`: уникалният индекс е проверката (няма TOCTOU). Редът се
+ * чете само заради Pro полетата на темата. `updatedAt` идва от `$onUpdate`.
  */
 export async function updateProfile(
   executor: DbExecutor,
@@ -113,24 +134,27 @@ export async function updateProfile(
   if (!parsed.success) throw new ProfileError('input_invalid');
   assertSlug(parsed.data.slug);
 
-  let updated: Profile | null;
-  try {
-    updated = await updateProfileByOrgAndId(executor, orgId, profileId, {
-      slug: parsed.data.slug,
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      title: parsed.data.title ?? null,
-      company: parsed.data.company ?? null,
-      bio: parsed.data.bio ?? null,
-      theme: parsed.data.theme,
-      isPublic: parsed.data.isPublic,
-    });
-  } catch (error) {
-    if (isUniqueViolation(error)) throw new ProfileError('slug_taken');
-    throw error;
-  }
-  if (updated === null) throw new ProfileError('profile_not_found');
-  return toDto(updated, await findLinksByProfile(executor, profileId));
+  return executor.transaction(async (tx) => {
+    const theme = await gatedTheme(tx, orgId, profileId, parsed.data.theme);
+    let updated: Profile | null;
+    try {
+      updated = await updateProfileByOrgAndId(tx, orgId, profileId, {
+        slug: parsed.data.slug,
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        title: parsed.data.title ?? null,
+        company: parsed.data.company ?? null,
+        bio: parsed.data.bio ?? null,
+        theme,
+        isPublic: parsed.data.isPublic,
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) throw new ProfileError('slug_taken');
+      throw error;
+    }
+    if (updated === null) throw new ProfileError('profile_not_found');
+    return toDto(updated, await findLinksByProfile(tx, profileId));
+  });
 }
 
 /**
@@ -175,13 +199,46 @@ export async function replaceProfileLinks(
   });
 }
 
-/** Линковете падат по cascade. Чужд профил → `profile_not_found`, нищо не се трие. */
+export const PROFILE_IMAGE_KINDS = ['photo', 'logo'] as const;
+export type ProfileImageKind = (typeof PROFILE_IMAGE_KINDS)[number];
+
+export interface SetProfileImageInput {
+  readonly orgId: string;
+  readonly profileId: string;
+  readonly kind: ProfileImageKind;
+  /** `null` = „Премахни". */
+  readonly key: string | null;
+}
+
+/**
+ * Записва ключа и връща СТАРИЯ (или `null`), за да го изтрие извикващият
+ * от диска чак след успешния запис. Чужд профил → `profile_not_found`.
+ */
+export async function setProfileImage(
+  executor: DbExecutor,
+  input: SetProfileImageInput,
+): Promise<string | null> {
+  const column = input.kind === 'photo' ? 'photoKey' : 'logoKey';
+  const result = await replaceProfileImageKey(
+    executor,
+    { orgId: input.orgId, profileId: input.profileId },
+    column,
+    input.key,
+  );
+  if (result === null) throw new ProfileError('profile_not_found');
+  return result.previousKey;
+}
+
+/**
+ * Линковете падат по cascade. Чужд профил → `profile_not_found`, нищо не се трие.
+ * Връща ключовете на снимка/лого — извикващият трие файловете (лице на диска).
+ */
 export async function deleteProfile(
   executor: DbExecutor,
   orgId: string,
   profileId: string,
-): Promise<void> {
-  if (!(await deleteProfileByOrgAndId(executor, orgId, profileId))) {
-    throw new ProfileError('profile_not_found');
-  }
+): Promise<DeletedProfileKeys> {
+  const keys = await deleteProfileByOrgAndId(executor, orgId, profileId);
+  if (keys === null) throw new ProfileError('profile_not_found');
+  return keys;
 }

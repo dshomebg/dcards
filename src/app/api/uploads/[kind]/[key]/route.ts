@@ -1,5 +1,5 @@
-// `GET /api/uploads/logos/{uuid}.webp` → логото от тома. Ключът е uuid, без
-// листване; съдържанието под ключ не се мени → година кеш, `immutable`.
+// `GET /api/uploads/{logos|photos}/{uuid}.webp` → файлът от тома. Ключът е
+// uuid, без листване; съдържанието под ключ не се мени → година кеш, `immutable`.
 
 import { isObjectKey, readObject } from '@/modules/core';
 
@@ -7,7 +7,7 @@ import { publicApiLimit } from '../../../rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-type Context = Readonly<{ params: Promise<{ key: string }> }>;
+type Context = Readonly<{ params: Promise<{ kind: string; key: string }> }>;
 
 function notFound(): Response {
   return new Response('Not found', {
@@ -17,8 +17,8 @@ function notFound(): Response {
 }
 
 export async function GET(req: Request, ctx: Context): Promise<Response> {
-  const { key } = await ctx.params;
-  const objectKey = `logos/${key}`;
+  const { kind, key } = await ctx.params;
+  const objectKey = `${kind}/${key}`;
   if (!isObjectKey(objectKey)) return notFound();
   // Лимитът е след валидацията (404 без Redis) и преди диска.
   const limited = await publicApiLimit(req);

@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import type { DbExecutor } from '@/modules/core';
 
+import { isObjectKey } from '../core/storage/key';
 import type { Organization } from './organization.schema';
 import { can } from './plan';
 import {
@@ -25,6 +26,12 @@ import {
   type ProfileTheme,
   type PublicProfile,
 } from './profile.schema';
+import {
+  DEFAULT_THEME,
+  profileThemeSchema,
+  safeTheme,
+  themeForPlan,
+} from './profile-theme';
 import { isReservedSlug, slugSchema } from './slug';
 
 export type ProfileErrorCode =
@@ -78,25 +85,12 @@ export interface CreateProfileInput {
   readonly links?: readonly CreateProfileLinkInput[];
 }
 
-const DEFAULT_THEME: ProfileTheme = {
-  preset: 'light',
-  primaryColor: null,
-  layout: 'default',
-};
-
 // Границите пазят публичната страница от неограничен HTML; сервизът се пази
 // сам, не чака извикващият да валидира.
 const text = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => text(max).nullish();
 
-export const profileThemeSchema = z.object({
-  preset: z.enum(['light', 'dark', 'sand']),
-  primaryColor: z
-    .string()
-    .regex(/^#[0-9a-f]{6}$/i)
-    .nullable(),
-  layout: z.literal('default'),
-});
+export { profileThemeSchema, safeTheme };
 
 export const profileLinkInputSchema = z.object({
   type: z.enum(PROFILE_LINK_TYPES),
@@ -124,12 +118,6 @@ export const createProfileInputSchema = z.object({
 export const updateProfileInputSchema = createProfileInputSchema
   .omit({ orgId: true, links: true })
   .extend({ theme: profileThemeSchema, isPublic: z.boolean() });
-
-/** Лош ред в базата (през studio) не бива да дава 500 на публичната страница. */
-export function safeTheme(raw: unknown): ProfileTheme {
-  const parsed = profileThemeSchema.safeParse(raw);
-  return parsed.success ? parsed.data : DEFAULT_THEME;
-}
 
 export function assertSlug(slug: string): void {
   if (!slugSchema.safeParse(slug).success) {
@@ -242,6 +230,8 @@ export interface PublicProfileRecord {
   readonly id: string;
   readonly orgId: string;
   readonly profile: PublicProfile;
+  /** Футърът „Създадено с" — пада автоматично при активен Pro (`noBranding`). */
+  readonly branding: boolean;
 }
 
 /** `null` и за непознат, и за скрит профил — страницата не различава двата случая. */
@@ -249,13 +239,15 @@ export async function findPublicProfileRecordBySlug(
   executor: DbExecutor,
   slug: string,
 ): Promise<PublicProfileRecord | null> {
-  const profile = await findProfileBySlug(executor, slug);
-  if (profile === null || !profile.isPublic) return null;
+  const row = await findProfileBySlug(executor, slug);
+  if (row === null || !row.profile.isPublic) return null;
+  const { profile, org } = row;
 
   const links = await findVisibleLinks(executor, profile.id);
   return {
     id: profile.id,
     orgId: profile.orgId,
+    branding: !can(org, 'noBranding'),
     profile: {
       slug: profile.slug,
       firstName: profile.firstName,
@@ -263,7 +255,10 @@ export async function findPublicProfileRecordBySlug(
       title: profile.title,
       company: profile.company,
       bio: profile.bio,
-      theme: safeTheme(profile.theme),
+      // Ключът стига до `url()`/`src` — както json-ът, и той се сверява при четене (DAT-7).
+      photoKey: safeKey(profile.photoKey),
+      logoKey: safeKey(profile.logoKey),
+      theme: themeForPlan(org, safeTheme(profile.theme)),
       links: links.map((link) => ({
         type: link.type,
         label: link.label,
@@ -272,6 +267,9 @@ export async function findPublicProfileRecordBySlug(
     },
   };
 }
+
+const safeKey = (key: string | null) =>
+  key !== null && isObjectKey(key) ? key : null;
 
 export async function findPublicProfileBySlug(
   executor: DbExecutor,

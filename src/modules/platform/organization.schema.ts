@@ -1,6 +1,7 @@
 // Организации и членства. Един потребител може да е в много организации;
 // всяка има точно един собственик.
 
+import { sql } from 'drizzle-orm';
 import {
   index,
   pgEnum,
@@ -8,7 +9,9 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
+  varchar,
 } from 'drizzle-orm/pg-core';
 
 import { users } from '../auth/user.schema';
@@ -65,3 +68,38 @@ export const orgMembers = pgTable(
 );
 
 export type OrgMember = typeof orgMembers.$inferSelect;
+
+/** Покана по имейл: суровият токен е само в писмото, тук стои SHA-256 хешът му. */
+export const orgInvitations = pgTable(
+  'org_invitations',
+  {
+    id: primaryId(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    email: varchar('email', { length: 254 }).notNull(),
+    role: orgMemberRoleEnum('role').notNull().default('editor'),
+    tokenHash: text('token_hash').notNull(),
+    // Канещият не се трие, докато има негови покани — писмото носи името му.
+    invitedBy: uuid('invited_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    expiresAt: timestamp('expires_at', {
+      withTimezone: true,
+      mode: 'date',
+    }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex('org_invitations_token_hash_idx').on(table.tokenHash),
+    // Една чакаща покана на адрес в org; приетите остават като история.
+    uniqueIndex('org_invitations_org_email_pending_idx')
+      .on(table.orgId, sql`lower(${table.email})`)
+      .where(sql`${table.acceptedAt} is null`),
+    index('org_invitations_org_idx').on(table.orgId),
+  ],
+);
+
+export type OrgInvitation = typeof orgInvitations.$inferSelect;
+export type NewOrgInvitation = typeof orgInvitations.$inferInsert;

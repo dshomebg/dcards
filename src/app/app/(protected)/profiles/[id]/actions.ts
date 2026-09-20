@@ -10,13 +10,13 @@ import {
   isOrgMember,
   type ProfileEditDto,
   ProfileError,
-  type ProfileTheme,
   replaceProfileLinks,
   updateProfile,
 } from '@/modules/platform';
 
 import { requireCurrent } from '../../current';
 import { userActionLimit } from '../../rate-limit';
+import { deleteQuietly } from './image-actions';
 import { profileFormSchema, type ProfileFormValues } from './schema';
 
 export interface ActionFailure {
@@ -52,12 +52,8 @@ function toServiceInput(values: ProfileFormValues) {
       title: emptyToNull(values.title),
       company: emptyToNull(values.company),
       bio: emptyToNull(values.bio),
-      // Pro полетата нямат UI: не се приемат от входа, за да не се запише Pro цвят без план.
-      theme: {
-        preset: values.theme.preset,
-        primaryColor: null,
-        layout: 'default',
-      } satisfies ProfileTheme,
+      // Pro полетата се гейтват в `updateProfile` по плана — action-ът ги подава както са.
+      theme: values.theme,
       isPublic: values.isPublic,
     },
     links: values.links.map((link) => ({
@@ -114,15 +110,22 @@ export async function deleteProfileAction(
   const id = z.uuid().safeParse(profileId);
   if (!id.success) return failure(ID_INVALID);
 
-  const { user, org } = await requireCurrent();
+  const { user, org, role } = await requireCurrent();
   const limited = await userActionLimit(user.id);
   if (limited !== null) return failure(limited);
+  // Изтриването е необратимо — само собственикът (ORG-1 § 7).
+  if (role !== 'owner') {
+    return failure('Само собственикът може да изтрие профил.');
+  }
 
   try {
     if (!(await isOrgMember(db, org.id, user.id))) {
       return failure('Нямаш достъп до тази организация.');
     }
-    await deleteProfile(db, org.id, id.data);
+    const keys = await deleteProfile(db, org.id, id.data);
+    // Снимката е лице — не бива да остава на диска без ред, който да я сочи.
+    await deleteQuietly(keys.photoKey);
+    await deleteQuietly(keys.logoKey);
   } catch (error) {
     if (error instanceof ProfileError) return failure(error.message);
     logUnexpected('deleteProfileAction', error);

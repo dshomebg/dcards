@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { logoUrl } from '@/lib/logo-url';
+import { uploadUrl } from '@/lib/upload-url';
 import {
   type AdminOrderDto,
   COURIER_LABELS,
@@ -79,7 +79,7 @@ export function ShippingSection({ order }: Readonly<{ order: AdminOrderDto }>) {
 
 /** `download` с име по uuid — печатницата получава файл, не страница. */
 function LogoRow({ logoKey }: Readonly<{ logoKey: string }>) {
-  const href = logoUrl(logoKey);
+  const href = uploadUrl(logoKey);
   return (
     <span className="mt-1 flex items-center gap-hint">
       <img

@@ -67,3 +67,28 @@ export async function claimLimit(
   if (refused.length === 0) return null;
   return tooManyMessage(Math.max(...refused.map((r) => r.retryAfterSec)));
 }
+
+const UNAVAILABLE = 'Услугата е временно недостъпна — опитай пак след малко.';
+
+/** Снимка/лого на профил: 20/час по потребител. Паднал Redis → отказ, не без таван. */
+export async function imageUploadLimit(userId: string): Promise<string | null> {
+  const { limit, windowSec } = RATE_POLICY.imageUploadUser;
+  const result = await rateLimit.consume(
+    rateKey.imageUploadUser(userId),
+    limit,
+    windowSec,
+  );
+  if (result.degraded === true) return UNAVAILABLE;
+  return result.allowed ? null : tooManyMessage(result.retryAfterSec);
+}
+
+/** Покани: 10/час по org, брои се и „Изпрати пак" (ORG-1). `null` = минава. */
+export async function inviteOrgLimit(orgId: string): Promise<string | null> {
+  const { limit, windowSec } = RATE_POLICY.inviteOrg;
+  const result = await rateLimit.consume(
+    rateKey.inviteOrg(orgId),
+    limit,
+    windowSec,
+  );
+  return result.allowed ? null : tooManyMessage(result.retryAfterSec);
+}

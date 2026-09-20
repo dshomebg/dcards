@@ -6,16 +6,21 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { env } from '../env';
+import { isObjectKey, type ObjectKind } from './key';
 
-/** Единственият приеман ключ — без него няма `join` с клиентски вход. */
-export const OBJECT_KEY_PATTERN = /^logos\/[0-9a-f-]{36}\.webp$/;
+export {
+  isObjectKey,
+  OBJECT_KEY_PATTERN,
+  OBJECT_KINDS,
+  type ObjectKind,
+} from './key';
 
-export function isObjectKey(key: string): boolean {
-  return OBJECT_KEY_PATTERN.test(key);
+export function createObjectKey(kind: ObjectKind): string {
+  return `${kind}/${randomUUID()}.webp`;
 }
 
 export function createLogoKey(): string {
-  return `logos/${randomUUID()}.webp`;
+  return createObjectKey('logos');
 }
 
 class StorageKeyError extends Error {

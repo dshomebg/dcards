@@ -84,3 +84,19 @@ describe('upload policy', () => {
     expect(RATE_POLICY.uploadIp).toEqual({ limit: 10, windowSec: 3600 });
   });
 });
+
+describe('image upload policy', () => {
+  it('keys the profile image upload per user at 20 an hour', () => {
+    expect(rateKey.imageUploadUser('u1')).toBe('rl:image-upload:user:u1');
+    expect(RATE_POLICY.imageUploadUser).toEqual({ limit: 20, windowSec: 3600 });
+  });
+});
+
+describe('invite policy', () => {
+  it('keys the invitations per org at 10 an hour and the token page per IP', () => {
+    expect(rateKey.inviteOrg('o1')).toBe('rl:invite:org:o1');
+    expect(RATE_POLICY.inviteOrg).toEqual({ limit: 10, windowSec: 3600 });
+    expect(rateKey.inviteIp('203.0.113.9')).toBe('rl:invite:ip:203.0.113.9');
+    expect(RATE_POLICY.inviteIp).toEqual({ limit: 30, windowSec: 900 });
+  });
+});

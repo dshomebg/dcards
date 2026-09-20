@@ -13,7 +13,14 @@ export function testProfile(
     title: 'Управител',
     company: 'Демо ООД',
     bio: 'Здравей.',
-    theme: { preset: 'sand', primaryColor: null, layout: 'default' },
+    photoKey: null,
+    logoKey: null,
+    theme: {
+      preset: 'sand',
+      primaryColor: null,
+      logoBackground: false,
+      layout: 'default',
+    },
     isPublic: true,
     updatedAt: new Date('2026-09-19T00:00:00Z'),
     links: [

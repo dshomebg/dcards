@@ -5,6 +5,7 @@ import { and, asc, count, eq } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/core';
 
 import { type Organization, organizations } from './organization.schema';
+import type { PlanFields } from './plan';
 import {
   type NewProfile,
   type NewProfileLink,
@@ -71,13 +72,26 @@ export async function insertProfileLinks(
     .returning();
 }
 
+export interface ProfileWithPlan {
+  readonly profile: Profile;
+  readonly org: PlanFields;
+}
+
+/** С плана на организацията — публичната страница гейтва Pro темата и брандинга. */
 export async function findProfileBySlug(
   executor: DbExecutor,
   slug: string,
-): Promise<Profile | null> {
+): Promise<ProfileWithPlan | null> {
   const rows = await executor
-    .select()
+    .select({
+      profile: profiles,
+      org: {
+        plan: organizations.plan,
+        planExpiresAt: organizations.planExpiresAt,
+      },
+    })
     .from(profiles)
+    .innerJoin(organizations, eq(organizations.id, profiles.orgId))
     .where(eq(profiles.slug, slug))
     .limit(1);
   return rows[0] ?? null;
@@ -185,6 +199,39 @@ export async function touchProfile(
   return rows.length > 0;
 }
 
+export type ProfileImageColumn = 'photoKey' | 'logoKey';
+
+/**
+ * Старият ключ и новият в една транзакция: редът се заключва, за да не изтрие
+ * едно паралелно качване файл, който другото току-що е записало.
+ * `null` = няма такъв профил в тази организация.
+ */
+export async function replaceProfileImageKey(
+  executor: DbExecutor,
+  ids: { readonly orgId: string; readonly profileId: string },
+  column: ProfileImageColumn,
+  key: string | null,
+): Promise<{ previousKey: string | null } | null> {
+  return executor.transaction(async (tx) => {
+    const owned = and(
+      eq(profiles.orgId, ids.orgId),
+      eq(profiles.id, ids.profileId),
+    );
+    const rows = await tx
+      .select({ previousKey: profiles[column] })
+      .from(profiles)
+      .where(owned)
+      .for('update');
+    const current = rows[0];
+    if (current === undefined) return null;
+    await tx
+      .update(profiles)
+      .set({ [column]: key, updatedAt: new Date() })
+      .where(owned);
+    return current;
+  });
+}
+
 export async function deleteLinksByProfile(
   executor: DbExecutor,
   profileId: string,
@@ -195,14 +242,20 @@ export async function deleteLinksByProfile(
 }
 
 /** `false` = няма такъв профил в тази организация. Линковете падат по cascade. */
+export interface DeletedProfileKeys {
+  readonly photoKey: string | null;
+  readonly logoKey: string | null;
+}
+
+/** `null` = нямаше такъв профил в org-а; иначе ключовете на файловете му за триене. */
 export async function deleteProfileByOrgAndId(
   executor: DbExecutor,
   orgId: string,
   profileId: string,
-): Promise<boolean> {
+): Promise<DeletedProfileKeys | null> {
   const rows = await executor
     .delete(profiles)
     .where(and(eq(profiles.orgId, orgId), eq(profiles.id, profileId)))
-    .returning({ id: profiles.id });
-  return rows.length > 0;
+    .returning({ photoKey: profiles.photoKey, logoKey: profiles.logoKey });
+  return rows[0] ?? null;
 }

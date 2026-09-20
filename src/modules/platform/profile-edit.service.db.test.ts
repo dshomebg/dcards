@@ -5,12 +5,14 @@ import { db } from '@/modules/core';
 
 import { users } from '../auth/user.schema';
 import { createPersonalOrganization } from './organization.repository';
+import { organizations } from './organization.schema';
 import { profileLinks, profiles } from './profile.schema';
 import { createProfile, ProfileError } from './profile.service';
 import {
   deleteProfile,
   getProfileForEdit,
   replaceProfileLinks,
+  setProfileImage,
   updateProfile,
 } from './profile-edit.service';
 
@@ -35,14 +37,33 @@ async function freeOrg(): Promise<string> {
   return org.id;
 }
 
+async function makePro(orgId: string, planExpiresAt: Date | null = null) {
+  await db
+    .update(organizations)
+    .set({ plan: 'pro', planExpiresAt })
+    .where(eq(organizations.id, orgId));
+}
+
 const base = { firstName: 'Иван', lastName: 'Петров' } as const;
+
+const proTheme = {
+  preset: 'dark',
+  primaryColor: '#8B1E3F',
+  logoBackground: true,
+  layout: 'default',
+} as const;
 
 const fields = {
   ...base,
   title: 'Управител',
   company: 'Демо ООД',
   bio: 'Здравей.',
-  theme: { preset: 'dark', primaryColor: null, layout: 'default' },
+  theme: {
+    preset: 'dark',
+    primaryColor: null,
+    logoBackground: false,
+    layout: 'default',
+  },
   isPublic: true,
 } as const;
 
@@ -91,7 +112,7 @@ describe('getProfileForEdit', () => {
       [1, false],
       [2, true],
     ]);
-    expect(dto).not.toHaveProperty('photoKey');
+    expect(dto).toMatchObject({ photoKey: null, logoKey: null });
     expect(dto).not.toHaveProperty('orgId');
   });
 
@@ -144,6 +165,88 @@ describe('updateProfile', () => {
     await expect(run('admin')).resolves.toBe('slug_reserved');
     await expect(run('Ab')).resolves.toBe('slug_invalid');
     expect((await rowOf(profile.id))?.slug).toBe('upd-mine');
+  });
+
+  it('Pro: writes colour (lower-cased) and logo background and reads them back', async () => {
+    const { orgId, profile } = await seed('upd-pro');
+    await makePro(orgId);
+    const dto = await updateProfile(db, orgId, profile.id, {
+      ...fields,
+      slug: 'upd-pro',
+      theme: proTheme,
+    });
+    expect(dto.theme).toEqual({ ...proTheme, primaryColor: '#8b1e3f' });
+    expect((await rowOf(profile.id))?.theme).toEqual(dto.theme);
+  });
+
+  it('Free and expired Pro: the save passes, Pro fields stay as in the row', async () => {
+    const { orgId, profile } = await seed('upd-free-keep');
+    await makePro(orgId);
+    await updateProfile(db, orgId, profile.id, {
+      ...fields,
+      slug: 'upd-free-keep',
+      theme: proTheme,
+    });
+
+    for (const expiresAt of [null, new Date(Date.now() - 1000)]) {
+      await db
+        .update(organizations)
+        .set({
+          plan: expiresAt === null ? 'free' : 'pro',
+          planExpiresAt: expiresAt,
+        })
+        .where(eq(organizations.id, orgId));
+      const dto = await updateProfile(db, orgId, profile.id, {
+        ...fields,
+        firstName: 'Йоан',
+        slug: 'upd-free-keep',
+        theme: {
+          preset: 'light',
+          primaryColor: '#000000',
+          logoBackground: false,
+          layout: 'default',
+        },
+      });
+      expect(dto.firstName).toBe('Йоан');
+      expect(dto.theme).toEqual({
+        preset: 'light',
+        primaryColor: '#8b1e3f',
+        logoBackground: true,
+        layout: 'default',
+      });
+    }
+  });
+
+  it('Free: forged Pro fields on a row without them are not written', async () => {
+    const { orgId, profile } = await seed('upd-free-forge');
+    const dto = await updateProfile(db, orgId, profile.id, {
+      ...fields,
+      slug: 'upd-free-forge',
+      theme: proTheme,
+    });
+    expect(dto.theme).toEqual({
+      preset: 'dark',
+      primaryColor: null,
+      logoBackground: false,
+      layout: 'default',
+    });
+    expect((await rowOf(profile.id))?.theme).toEqual(dto.theme);
+  });
+
+  it('rejects an invalid colour with input_invalid, even for Pro', async () => {
+    const { orgId, profile } = await seed('upd-bad-colour');
+    await makePro(orgId);
+    for (const primaryColor of ['red', '#fff', '#8b1e3f00', 'url(x)']) {
+      await expect(
+        codeOf(
+          updateProfile(db, orgId, profile.id, {
+            ...fields,
+            slug: 'upd-bad-colour',
+            theme: { ...proTheme, primaryColor },
+          }),
+        ),
+      ).resolves.toBe('input_invalid');
+    }
   });
 
   it('keeps its own slug and rejects invalid input', async () => {
@@ -246,5 +349,65 @@ describe('deleteProfile', () => {
     );
     expect(await rowOf(profile.id)).toBeDefined();
     expect(await linksOf(profile.id)).toHaveLength(2);
+  });
+});
+
+describe('setProfileImage', () => {
+  const PHOTO_1 = 'photos/00000000-0000-4000-8000-000000000001.webp';
+  const PHOTO_2 = 'photos/00000000-0000-4000-8000-000000000002.webp';
+  const LOGO = 'logos/00000000-0000-4000-8000-000000000003.webp';
+
+  it('returns the previous key, keeps the other column and bumps updatedAt', async () => {
+    const { orgId, profile } = await seed('img-own');
+    const base = { orgId, profileId: profile.id };
+    expect(
+      await setProfileImage(db, { ...base, kind: 'photo', key: PHOTO_1 }),
+    ).toBeNull();
+    expect(
+      await setProfileImage(db, { ...base, kind: 'logo', key: LOGO }),
+    ).toBeNull();
+    expect(
+      await setProfileImage(db, { ...base, kind: 'photo', key: PHOTO_2 }),
+    ).toBe(PHOTO_1);
+    const row = await rowOf(profile.id);
+    expect(row).toMatchObject({ photoKey: PHOTO_2, logoKey: LOGO });
+    expect(row?.updatedAt.getTime()).toBeGreaterThan(
+      profile.updatedAt.getTime(),
+    );
+    expect(
+      await setProfileImage(db, { ...base, kind: 'photo', key: null }),
+    ).toBe(PHOTO_2);
+    expect((await rowOf(profile.id))?.photoKey).toBeNull();
+  });
+
+  it('profile_not_found for another org; the row is untouched', async () => {
+    const { profile } = await seed('img-other');
+    const stranger = await freeOrg();
+    await expect(
+      codeOf(
+        setProfileImage(db, {
+          orgId: stranger,
+          profileId: profile.id,
+          kind: 'photo',
+          key: PHOTO_1,
+        }),
+      ),
+    ).resolves.toBe('profile_not_found');
+    expect((await rowOf(profile.id))?.photoKey).toBeNull();
+  });
+
+  it('saveProfileAction path: updateProfile does not reset the keys', async () => {
+    const { orgId, profile } = await seed('img-keep');
+    await setProfileImage(db, {
+      orgId,
+      profileId: profile.id,
+      kind: 'logo',
+      key: LOGO,
+    });
+    const dto = await updateProfile(db, orgId, profile.id, {
+      ...fields,
+      slug: 'img-keep',
+    });
+    expect(dto.logoKey).toBe(LOGO);
   });
 });

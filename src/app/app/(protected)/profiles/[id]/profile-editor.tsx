@@ -11,7 +11,8 @@ import { saveProfileAction } from './actions';
 import { DeleteProfile } from './delete-profile';
 import { LinksFields } from './links-fields';
 import { ProfileFields } from './profile-fields';
-import { ProfilePreview } from './profile-preview';
+import { ProfileImages } from './profile-images';
+import { type EditorPlan, ProfilePreview } from './profile-preview';
 import {
   profileFormSchema,
   type ProfileFormValues,
@@ -20,11 +21,13 @@ import {
 
 interface Props {
   readonly profile: ProfileEditDto;
+  /** Изчислен на сървъра от плана на org-а — клиентът не тълкува `plan`. */
+  readonly plan: EditorPlan;
   readonly appName: string;
   readonly appUrl: string;
 }
 
-export function ProfileEditor({ profile, appName, appUrl }: Props) {
+export function ProfileEditor({ profile, plan, appName, appUrl }: Props) {
   // Последно записаното: превюто ползва неговия slug, „Отказ" връща към него.
   const [saved, setSaved] = useState(profile);
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,7 +53,13 @@ export function ProfileEditor({ profile, appName, appUrl }: Props) {
       setFormError(result.message);
       return;
     }
-    setSaved(result.profile);
+    // Ключовете са от `saved`, не от отговора: качване по време на записване
+    // не бива да бъде затрито от стария DTO.
+    setSaved((prev) => ({
+      ...result.profile,
+      photoKey: prev.photoKey,
+      logoKey: prev.logoKey,
+    }));
     reset(toFormValues(result.profile));
     setStatus('Записано.');
   });
@@ -82,7 +91,19 @@ export function ProfileEditor({ profile, appName, appUrl }: Props) {
           className="flex flex-col gap-8"
           noValidate
         >
-          <ProfileFields form={form} />
+          <ProfileImages
+            profileId={saved.id}
+            photoKey={saved.photoKey}
+            logoKey={saved.logoKey}
+            onChange={(kind, key) =>
+              setSaved((prev) => ({ ...prev, [`${kind}Key`]: key }))
+            }
+          />
+          <ProfileFields
+            form={form}
+            customTheme={plan.customTheme}
+            hasLogo={saved.logoKey !== null}
+          />
           <LinksFields form={form} />
           <DeleteProfile profileId={saved.id} />
         </form>
@@ -90,6 +111,8 @@ export function ProfileEditor({ profile, appName, appUrl }: Props) {
         <ProfilePreview
           control={control}
           slug={saved.slug}
+          images={{ photoKey: saved.photoKey, logoKey: saved.logoKey }}
+          plan={plan}
           appName={appName}
           appUrl={appUrl}
         />

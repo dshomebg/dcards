@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation';
 import { z } from 'zod';
 
 import { db, env } from '@/modules/core';
-import { getProfileForEdit } from '@/modules/platform';
+import { can, getProfileForEdit } from '@/modules/platform';
 
 import { requireCurrent } from '../../current';
 import { ProfileEditor } from './profile-editor';
@@ -27,6 +27,14 @@ export default async function Page(props: Props) {
 
   const { APP_NAME, APP_URL } = env();
   return (
-    <ProfileEditor profile={profile} appName={APP_NAME} appUrl={APP_URL} />
+    <ProfileEditor
+      profile={profile}
+      plan={{
+        customTheme: can(org, 'customTheme'),
+        branding: !can(org, 'noBranding'),
+      }}
+      appName={APP_NAME}
+      appUrl={APP_URL}
+    />
   );
 }

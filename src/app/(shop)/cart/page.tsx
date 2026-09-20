@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { buttonStyles } from '@/components/ui/button';
-import { logoUrl } from '@/lib/logo-url';
+import { uploadUrl } from '@/lib/upload-url';
 import { db, env } from '@/modules/core';
 import {
   type CartViewLine,
@@ -75,7 +75,7 @@ function LineRow({
       <div className="flex items-center gap-field">
         {personalization.logoKey !== null && (
           <img
-            src={logoUrl(personalization.logoKey)}
+            src={uploadUrl(personalization.logoKey)}
             alt="Лого"
             width={48}
             height={48}

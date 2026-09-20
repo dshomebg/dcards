@@ -30,13 +30,17 @@ export const changePasswordInputSchema = z.object({
 
 export type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>;
 
-// Само пътят на картата — не произволен вътрешен път: „/app" и подобни се
+// Само картата и поканата — не произволен вътрешен път: „/app" и подобни се
 // достигат и без `?next=`, а всичко друго е open redirect.
-const NEXT_PATH_PATTERN = /^\/c\/[A-Za-z0-9]{6,8}$/;
+const NEXT_PATH_PATTERNS = [
+  /^\/c\/[A-Za-z0-9]{6,8}$/,
+  /^\/invite\?token=[A-Za-z0-9_-]{43}$/,
+];
 
-/** Накъде след вход/регистрация: `/c/{id}` или `null` (→ `/app`). */
+/** Накъде след вход/регистрация: `/c/{id}`, `/invite?token=…` или `null` (→ `/app`). */
 export function safeNextPath(raw: unknown): string | null {
-  return typeof raw === 'string' && NEXT_PATH_PATTERN.test(raw) ? raw : null;
+  if (typeof raw !== 'string') return null;
+  return NEXT_PATH_PATTERNS.some((pattern) => pattern.test(raw)) ? raw : null;
 }
 
 /** Каквото носи сесията — публичното от реда в `users`, без роля (AUTH-7). */
