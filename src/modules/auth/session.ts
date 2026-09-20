@@ -20,6 +20,9 @@ const COOKIE_NAME = 'session';
 
 const keyOf = (id: string) => `session:${id}`;
 
+// Индекс на сесиите по потребител (Redis set) — за прекратяване на другите.
+const userKeyOf = (userId: string) => `user-sessions:${userId}`;
+
 export async function createSession(user: SessionUser): Promise<void> {
   // 32 случайни байта — id-то е непредвидимо само по себе си, без подпис.
   const id = randomBytes(32).toString('base64url');
@@ -30,6 +33,8 @@ export async function createSession(user: SessionUser): Promise<void> {
   if (previous !== undefined) await redis.del(keyOf(previous));
 
   await redis.set(keyOf(id), JSON.stringify(user), 'EX', SESSION_TTL_SECONDS);
+  await redis.sadd(userKeyOf(user.id), id);
+  await redis.expire(userKeyOf(user.id), SESSION_TTL_SECONDS);
 
   store.set(COOKIE_NAME, id, {
     httpOnly: true,
@@ -51,10 +56,29 @@ export async function readSession(): Promise<SessionUser | null> {
     if (raw === null) return null;
 
     await redis.expire(keyOf(id), SESSION_TTL_SECONDS);
-    return JSON.parse(raw) as SessionUser;
+    const user = JSON.parse(raw) as SessionUser;
+    // Плъзга и индекса — иначе множеството изтича 7 дни след входа.
+    await redis.expire(userKeyOf(user.id), SESSION_TTL_SECONDS);
+    return user;
   } catch {
     return null;
   }
+}
+
+/**
+ * Трие всички сесии на потребителя освен текущата (от cookie-то). Сесии отпреди
+ * индекса не са в множеството — изтичат сами. Застояло id в set-а е безвредно.
+ */
+export async function revokeOtherSessions(userId: string): Promise<void> {
+  const store = await cookies();
+  const current = store.get(COOKIE_NAME)?.value;
+  const userKey = userKeyOf(userId);
+
+  const others = (await redis.smembers(userKey)).filter((id) => id !== current);
+  if (others.length === 0) return;
+
+  await redis.del(...others.map(keyOf));
+  await redis.srem(userKey, ...others);
 }
 
 /**

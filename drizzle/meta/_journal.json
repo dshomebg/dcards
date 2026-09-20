@@ -15,6 +15,20 @@
       "when": 1789836832033,
       "tag": "0001_profiles_links",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789888103064,
+      "tag": "0002_cards_batches",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789890360690,
+      "tag": "0003_scans",
+      "breakpoints": true
     }
   ]
 }

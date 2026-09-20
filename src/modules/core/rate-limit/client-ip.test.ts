@@ -22,4 +22,18 @@ describe('clientIpFrom', () => {
     headers.set('x-real-ip', '203.0.113.9');
     expect(clientIpFrom(headers)).toBe('203.0.113.9');
   });
+
+  it('buckets IPv6 clients by /64 so one host cannot rotate through its prefix', () => {
+    const a = clientIpFrom(new Headers({ 'x-real-ip': '2001:db8:1:2::1' }));
+    const b = clientIpFrom(
+      new Headers({ 'x-real-ip': '2001:db8:1:2:ffff::2' }),
+    );
+    const c = clientIpFrom(new Headers({ 'x-real-ip': '2001:db8:1:3::1' }));
+    expect(a).toBe('2001:db8:1:2::/64');
+    expect(b).toBe(a);
+    expect(c).not.toBe(a);
+    expect(clientIpFrom(new Headers({ 'x-real-ip': '203.0.113.9' }))).toBe(
+      '203.0.113.9',
+    );
+  });
 });

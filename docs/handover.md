@@ -5,10 +5,14 @@
 
 ## Докъде сме
 
+**Етап 2 е завършен (CRD-1 + CRD-2), локално, чака комит + деплой. Следва етап 3 — магазинът
+(продукти, количка, checkout с наложен платеж, админ на поръчки) — или части от етап 4
+(статистика, Pro gating, имейли).** Платформата вече обслужва карти, продадени и извън сайта.
+OPS-1/OPS-2 (rate limit, seed, backup на cron 03:00, смяна на парола) са готови. `CARD_URL_BASE`
+(само origin) е адресът върху чипа — при кратък домейн се задава в прод `.env` ПРЕДИ партида.
 **Етап 1 е завършен и комитнат. ПРОДЪТ Е НА ЖИВО от 2026-09-20: `https://www.dcards-bg.com`**
 (release в `/opt/dcards/.deploy-history`; nginx шаблон `dcards-proxy` в Hestia; първи админ
-`info@dcards-bg.com`, паролата е при собственика). Следва: или **първи деплой** (`docs/go-live.md` + rate limit
-преди него), или **етап 2** — карти и партиди (`/c/{id}`, активация, admin `/admin/batches`).
+`info@dcards-bg.com`, паролата е при собственика).
 
 `PLT-5`: редактор `/app/profiles/{id}` (полета, адрес, тема, видимост, линкове ↑/↓, превю,
 изтриване); `profile-edit.service.ts` с `getProfileForEdit/updateProfile/replaceProfileLinks/

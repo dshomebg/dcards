@@ -2,12 +2,26 @@ import { z } from 'zod';
 
 // Единственото място, което чете `process.env`. Липсваща стойност пада при старт,
 // не при първата заявка в три сутринта.
+
+// Само origin: път/query/`#` дават счупен адрес върху чип, който не се презаписва (DAT-3).
+const originUrl = z.url().refine((value) => {
+  const url = new URL(value);
+  return (
+    (url.protocol === 'http:' || url.protocol === 'https:') &&
+    url.pathname === '/' &&
+    url.search === '' &&
+    url.hash === ''
+  );
+}, 'Only scheme and host are allowed, without path, query or hash.');
+
 const schema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
   APP_NAME: z.string().default('DCARDS'),
-  APP_URL: z.url().default('http://localhost:3000'),
+  APP_URL: originUrl.default('http://localhost:3000'),
+  // Адресът върху картите (`/c/{id}`) — къс домейн, купен отделно; иначе `APP_URL`.
+  CARD_URL_BASE: originUrl.optional(),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   SESSION_SECRET: z.string().min(32),

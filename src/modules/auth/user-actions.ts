@@ -13,7 +13,12 @@ import {
 } from './admin-account';
 import { loginRateLimit, registerRateLimit } from './login-limit';
 import { registerAccount, type RegisterResult } from './registration';
-import { registerSchema, type SignInInput, signInSchema } from './schema';
+import {
+  registerSchema,
+  safeNextPath,
+  type SignInInput,
+  signInSchema,
+} from './schema';
 import { createSession, destroySession } from './session';
 
 export interface RegisterFailure {
@@ -43,8 +48,11 @@ async function openSession(input: SignInInput): Promise<boolean> {
   return true;
 }
 
-/** Клиентски вход: не хвърля; при успех сам пренасочва към `/app`. */
-export async function signInUser(input: unknown): Promise<SignInFailure> {
+/** Клиентски вход: не хвърля; при успех пренасочва към `next` (`/c/{id}`) или `/app`. */
+export async function signInUser(
+  input: unknown,
+  next?: unknown,
+): Promise<SignInFailure> {
   const parsed = signInSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: REJECTED };
 
@@ -59,7 +67,7 @@ export async function signInUser(input: unknown): Promise<SignInFailure> {
   }
 
   // `redirect` хвърля — стои извън `try`, инак `catch` го глътва.
-  if (opened) redirect('/app');
+  if (opened) redirect(safeNextPath(next) ?? '/app');
 
   return { ok: false, message: REJECTED };
 }
@@ -83,8 +91,11 @@ function logCause(context: string, error: unknown): void {
   console.error(`${context}:`, cause);
 }
 
-/** Регистрация: създава акаунт и org, отваря сесия и пренасочва към `/app`. */
-export async function register(input: unknown): Promise<RegisterFailure> {
+/** Регистрация: акаунт и org, сесия, после `next` (`/c/{id}`) или `/app`. */
+export async function register(
+  input: unknown,
+  next?: unknown,
+): Promise<RegisterFailure> {
   const parsed = registerSchema.safeParse(input);
   if (!parsed.success) {
     const message = parsed.error.issues[0]?.message ?? 'Невалидни данни.';
@@ -119,7 +130,7 @@ export async function register(input: unknown): Promise<RegisterFailure> {
   } catch {
     opened = false;
   }
-  if (opened) redirect('/app');
+  if (opened) redirect(safeNextPath(next) ?? '/app');
 
   return {
     ok: false,

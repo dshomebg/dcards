@@ -9,7 +9,9 @@ import { Field } from '@/components/ui/field';
 import { type SignInInput, signInSchema, signInUser } from '@/modules/auth';
 
 // Отделно копие от админската форма (ADM-1 § 3.3): двата входа не делят адрес и форма.
-export function LoginForm() {
+type Props = Readonly<{ next?: string | null }>;
+
+export function LoginForm({ next = null }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -24,7 +26,7 @@ export function LoginForm() {
   // При успех action-ът пренасочва сам; тук стига само отказът.
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
-    const result = await signInUser(values);
+    const result = await signInUser(values, next);
     setFormError(result.message);
   });
 

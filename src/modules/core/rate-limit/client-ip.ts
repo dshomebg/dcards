@@ -3,8 +3,15 @@
 
 export const UNKNOWN_IP = 'unknown';
 
+// IPv6 клиент разполага с цял /64 — ключ по пълния адрес не ограничава нищо.
+function bucketOf(ip: string): string {
+  if (!ip.includes(':')) return ip;
+  const groups = ip.split('::')[0]?.split(':') ?? [];
+  return `${groups.slice(0, 4).join(':')}::/64`;
+}
+
 /** Чист helper над `Headers` — без `next/headers`, за да остане `core` без Next. */
 export function clientIpFrom(headers: Headers): string {
   const ip = headers.get('x-real-ip')?.trim();
-  return ip ? ip : UNKNOWN_IP;
+  return ip ? bucketOf(ip) : UNKNOWN_IP;
 }

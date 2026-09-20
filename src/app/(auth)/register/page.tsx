@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@/modules/auth';
+import { getCurrentUser, safeNextPath } from '@/modules/auth';
 import { env } from '@/modules/core';
 
 import { RegisterForm } from './register-form';
@@ -12,11 +12,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function RegisterPage() {
+type Props = Readonly<{ searchParams: Promise<{ next?: string | string[] }> }>;
+
+export default async function RegisterPage(props: Props) {
+  const { next: rawNext } = await props.searchParams;
+  const next = typeof rawNext === 'string' ? rawNext : null;
+
   const user = await getCurrentUser();
   if (user !== null) {
-    redirect('/app');
+    redirect(safeNextPath(next) ?? '/app');
   }
+  const loginHref =
+    safeNextPath(next) === null ? '/login' : `/login?next=${next}`;
 
   return (
     <main className="flex min-h-dvh items-center justify-center px-6 py-12">
@@ -28,11 +35,11 @@ export default async function RegisterPage() {
           </p>
         </header>
 
-        <RegisterForm />
+        <RegisterForm next={next} />
 
         <p className="text-text-muted mt-6 text-sm">
           Имаш акаунт?{' '}
-          <Link href="/login" className="text-brand underline">
+          <Link href={loginHref} className="text-brand underline">
             Влез
           </Link>
         </p>

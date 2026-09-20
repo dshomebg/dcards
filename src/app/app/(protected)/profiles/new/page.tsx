@@ -6,8 +6,12 @@ import { NewProfileForm } from './new-profile-form';
 
 export const metadata: Metadata = { title: 'Нов профил' };
 
-export default async function NewProfilePage() {
+type Props = Readonly<{ searchParams: Promise<{ card?: string | string[] }> }>;
+
+export default async function NewProfilePage(props: Props) {
   await requireCurrent();
+  // От `/c/{id}` („Нов профил"): след създаване се връща на картата.
+  const { card } = await props.searchParams;
 
   return (
     <main className="flex flex-col gap-6 px-4 py-8">
@@ -19,7 +23,7 @@ export default async function NewProfilePage() {
       </div>
 
       <div className="max-w-sm">
-        <NewProfileForm />
+        <NewProfileForm card={typeof card === 'string' ? card : null} />
       </div>
 
       <Link href="/app" className="text-text-muted text-sm underline">

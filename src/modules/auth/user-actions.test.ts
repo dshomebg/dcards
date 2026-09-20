@@ -156,6 +156,21 @@ describe('signInUser', () => {
     );
   });
 
+  it('follows a safe next path and falls back to /app for anything else', async () => {
+    await expect(
+      signInUser(
+        { email: 'member@example.com', password: 'correct-horse-1' },
+        '/c/ABCD2345',
+      ),
+    ).rejects.toThrow('REDIRECT:/c/ABCD2345');
+    await expect(
+      signInUser(
+        { email: 'member@example.com', password: 'correct-horse-1' },
+        'https://evil.example',
+      ),
+    ).rejects.toThrow('REDIRECT:/app');
+  });
+
   it('refuses a limited attempt before the database and the hash check', async () => {
     rateLimit.consume.mockResolvedValue({ allowed: false, retryAfterSec: 900 });
 
@@ -259,6 +274,27 @@ describe('register', () => {
       email: 'k@x.bg',
       name: 'Кирил',
     });
+  });
+
+  it('follows a safe next path after registration', async () => {
+    registration.registerAccount.mockResolvedValue({
+      status: 'created',
+      user: {
+        id: MEMBER_ID,
+        email: 'k@x.bg',
+        name: 'Кирил',
+        emailVerifiedAt: null,
+        isAdmin: false,
+        createdAt: new Date(),
+      },
+    });
+
+    await expect(register(valid, '/c/ABCD2345')).rejects.toThrow(
+      'REDIRECT:/c/ABCD2345',
+    );
+    await expect(register(valid, '//evil.example')).rejects.toThrow(
+      'REDIRECT:/app',
+    );
   });
 
   it('points to /login when the account exists but the session could not open', async () => {

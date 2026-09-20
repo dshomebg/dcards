@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { register, type RegisterInput, registerSchema } from '@/modules/auth';
 
-export function RegisterForm() {
+type Props = Readonly<{ next?: string | null }>;
+
+export function RegisterForm({ next = null }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -24,7 +26,7 @@ export function RegisterForm() {
   // При успех action-ът пренасочва сам; тук стига само отказът.
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
-    const result = await register(values);
+    const result = await register(values, next);
     setFormError(result.message);
   });
 

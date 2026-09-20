@@ -19,6 +19,26 @@ export const registerSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 
+/** Границите на новата парола са тези на `registerSchema.password` (DAT-8). */
+export const changePasswordInputSchema = z.object({
+  currentPassword: z.string().min(1, 'Въведи текущата парола.').max(256),
+  newPassword: z
+    .string()
+    .min(8, 'Паролата трябва да е поне 8 знака.')
+    .max(256, 'Твърде дълга парола.'),
+});
+
+export type ChangePasswordInput = z.infer<typeof changePasswordInputSchema>;
+
+// Само пътят на картата — не произволен вътрешен път: „/app" и подобни се
+// достигат и без `?next=`, а всичко друго е open redirect.
+const NEXT_PATH_PATTERN = /^\/c\/[A-Za-z0-9]{6,8}$/;
+
+/** Накъде след вход/регистрация: `/c/{id}` или `null` (→ `/app`). */
+export function safeNextPath(raw: unknown): string | null {
+  return typeof raw === 'string' && NEXT_PATH_PATTERN.test(raw) ? raw : null;
+}
+
 /** Каквото носи сесията — публичното от реда в `users`, без роля (AUTH-7). */
 export interface SessionUser {
   readonly id: string;

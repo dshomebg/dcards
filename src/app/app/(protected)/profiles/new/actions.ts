@@ -4,10 +4,15 @@ import { DrizzleQueryError } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 
 import { db } from '@/modules/core';
-import { createProfile, isOrgMember, ProfileError } from '@/modules/platform';
+import {
+  cardIdSchema,
+  createProfile,
+  isOrgMember,
+  ProfileError,
+} from '@/modules/platform';
 
 import { requireCurrent } from '../../current';
-import { userActionLimit } from '../rate-limit';
+import { userActionLimit } from '../../rate-limit';
 import { newProfileSchema } from './schema';
 
 export interface CreateProfileFailure {
@@ -22,10 +27,12 @@ const failure = (message: string): CreateProfileFailure => ({
 
 /**
  * „Нов профил": org-ът е САМО от сървъра (`requireCurrent`) — подаден `orgId`
- * във входа се игнорира от схемата. Не хвърля към клиента; при успех пренасочва.
+ * във входа се игнорира от схемата. Не хвърля към клиента; при успех пренасочва
+ * към `/c/{card}` (дошъл от чипа) или `/app`. Невалиден `card` се игнорира.
  */
 export async function createProfileAction(
   input: unknown,
+  card?: unknown,
 ): Promise<CreateProfileFailure> {
   const parsed = newProfileSchema.safeParse(input);
   if (!parsed.success) {
@@ -53,5 +60,6 @@ export async function createProfileAction(
     return failure('Профилът не беше създаден — опитай пак след малко.');
   }
 
-  redirect('/app');
+  const backToCard = cardIdSchema.safeParse(card);
+  redirect(backToCard.success ? `/c/${backToCard.data}` : '/app');
 }

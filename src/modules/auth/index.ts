@@ -10,14 +10,23 @@ export { getCurrentAdmin } from './current-admin';
 export { getCurrentUser } from './current-user';
 export {
   type Admin,
+  type ChangePasswordInput,
+  changePasswordInputSchema,
   type RegisterInput,
   registerSchema,
+  safeNextPath,
   type SessionUser,
   type SignInInput,
   signInSchema,
 } from './schema';
+export { revokeOtherSessions } from './session';
 export { type PublicUser } from './user.schema';
-export { createUser, findUserByEmail } from './user.service';
+export {
+  changePassword,
+  type ChangePasswordResult,
+  createUser,
+  findUserByEmail,
+} from './user.service';
 export {
   register,
   type RegisterFailure,

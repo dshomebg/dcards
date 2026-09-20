@@ -10,7 +10,9 @@ import { Field } from '@/components/ui/field';
 import { createProfileAction } from './actions';
 import { type NewProfileInput, newProfileSchema } from './schema';
 
-export function NewProfileForm() {
+type Props = Readonly<{ card?: string | null }>;
+
+export function NewProfileForm({ card = null }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -25,7 +27,7 @@ export function NewProfileForm() {
   // При успех action-ът пренасочва сам; тук стига само отказът.
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
-    const result = await createProfileAction(values);
+    const result = await createProfileAction(values, card);
     setFormError(result.message);
   });
 

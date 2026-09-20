@@ -50,3 +50,18 @@ export async function insert(
   if (created === undefined) throw new Error('insert users returned no row');
   return created;
 }
+
+/** Само хешът — `true`, ако редът съществува и е презаписан. */
+export async function updatePasswordHash(
+  executor: DbExecutor,
+  userId: string,
+  passwordHash: string,
+): Promise<boolean> {
+  const rows = await executor
+    .update(users)
+    .set({ passwordHash })
+    .where(eq(users.id, userId))
+    .returning({ id: users.id });
+
+  return rows.length > 0;
+}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { getCurrentUser } from '@/modules/auth';
+import { getCurrentUser, safeNextPath } from '@/modules/auth';
 import { env } from '@/modules/core';
 
 import { LoginForm } from './login-form';
@@ -12,12 +12,20 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function LoginPage() {
+type Props = Readonly<{ searchParams: Promise<{ next?: string | string[] }> }>;
+
+export default async function LoginPage(props: Props) {
+  const { next: rawNext } = await props.searchParams;
+  // Страницата само носи `next` — валидира го action-ът; тук само за redirect-а.
+  const next = typeof rawNext === 'string' ? rawNext : null;
+
   // Вече влезлият няма работа тук — иначе формата изглежда счупена.
   const user = await getCurrentUser();
   if (user !== null) {
-    redirect('/app');
+    redirect(safeNextPath(next) ?? '/app');
   }
+  const registerHref =
+    safeNextPath(next) === null ? '/register' : `/register?next=${next}`;
 
   return (
     <main className="flex min-h-dvh items-center justify-center px-6 py-12">
@@ -27,11 +35,11 @@ export default async function LoginPage() {
           <p className="text-text-muted text-sm">Влез, за да продължиш.</p>
         </header>
 
-        <LoginForm />
+        <LoginForm next={next} />
 
         <p className="text-text-muted mt-6 text-sm">
           Нямаш акаунт?{' '}
-          <Link href="/register" className="text-brand underline">
+          <Link href={registerHref} className="text-brand underline">
             Регистрирай се
           </Link>
         </p>

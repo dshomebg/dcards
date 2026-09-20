@@ -12,14 +12,10 @@ export interface Current {
   readonly org: Organization;
 }
 
-/**
- * Пазачът на `/app`: всяка страница и action го вика сама — layout-ът не се
- * изпълнява при мека навигация. Без сесия → `/login`. `orgId` идва оттук,
- * никога от формата (AUTH-2).
- */
-export async function requireCurrent(): Promise<Current> {
+/** Сесия + лична org, или `null` без сесия — за публични страници като `/c/{id}`. */
+export async function loadCurrent(): Promise<Current | null> {
   const user = await getCurrentUser();
-  if (user === null) redirect('/login');
+  if (user === null) return null;
 
   const org = await findPersonalOrganizationByOwner(db, user.id);
   // Регистрацията и seed-ът я създават в една транзакция с потребителя.
@@ -27,4 +23,13 @@ export async function requireCurrent(): Promise<Current> {
     throw new Error(`user ${user.id} has no personal organization`);
   }
   return { user, org };
+}
+
+/**
+ * Пазачът на `/app`: всяка страница и action го вика сама — layout-ът не се
+ * изпълнява при мека навигация. Без сесия → `/login`. `orgId` идва оттук,
+ * никога от формата (AUTH-2).
+ */
+export async function requireCurrent(): Promise<Current> {
+  return (await loadCurrent()) ?? redirect('/login');
 }

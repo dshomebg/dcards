@@ -109,6 +109,18 @@ describe('createProfileAction', () => {
     error.mockRestore();
   });
 
+  it('returns to the card after creation and ignores an invalid card id', async () => {
+    await expect(createProfileAction(input, 'abcd2345')).rejects.toThrow(
+      'REDIRECT:/c/ABCD2345',
+    );
+    await expect(createProfileAction(input, 'O1234567')).rejects.toThrow(
+      'REDIRECT:/app',
+    );
+    await expect(createProfileAction(input, null)).rejects.toThrow(
+      'REDIRECT:/app',
+    );
+  });
+
   it('takes the org from the server, ignoring one in the input, and redirects', async () => {
     await expect(
       createProfileAction({ ...input, orgId: 'forged' }),

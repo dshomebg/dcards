@@ -16,7 +16,7 @@ import {
 } from '@/modules/platform';
 
 import { requireCurrent } from '../../current';
-import { userActionLimit } from '../rate-limit';
+import { userActionLimit } from '../../rate-limit';
 import { profileFormSchema, type ProfileFormValues } from './schema';
 
 export interface ActionFailure {
