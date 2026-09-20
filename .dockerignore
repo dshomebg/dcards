@@ -3,7 +3,9 @@ node_modules
 .git
 .claude
 docs
+# scripts/ остава навън, освен seed-ът — той се бъндълва в образа (OPS-1).
 scripts
+!scripts/db/seed-admin.ts
 uploads
 *.tar
 .env

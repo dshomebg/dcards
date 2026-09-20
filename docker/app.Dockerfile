@@ -20,9 +20,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # `next build` импортира всеки route, а `env()` се валидира при импорт (db/redis
 # клиентите). Няма `.env` в образа — стойностите тук са само за строене, нищо не
 # се свързва; истинската среда идва от compose при пускане.
-ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build     REDIS_URL=redis://127.0.0.1:6379     SESSION_SECRET=build-only-placeholder-not-used-at-runtime
+ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build     REDIS_URL=redis://127.0.0.1:6379
 COPY . .
-RUN pnpm build
+# SESSION_SECRET само за тази команда — като ENV Docker го брои за тайна в образа.
+RUN SESSION_SECRET=build-only-placeholder-not-used-at-runtime pnpm build
 
 # -------------------------------------------------------------------- работа
 # Същият образ пуска и миграциите, и първия админ: `migrate.mjs` и `seed-admin.mjs`
