@@ -25,8 +25,9 @@ COPY . .
 RUN pnpm build
 
 # -------------------------------------------------------------------- работа
-# Същият образ пуска и миграциите: `migrate.mjs` е бъндълнат от `pnpm build`, така
-# че не носим tsx и node_modules само заради него.
+# Същият образ пуска и миграциите, и първия админ: `migrate.mjs` и `seed-admin.mjs`
+# са бъндълнати от `pnpm build` (в `standalone/`), така че не носим tsx заради тях.
+# `argon2` е native и остава external — standalone вече го съдържа в node_modules.
 FROM base AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs

@@ -6,10 +6,6 @@
 - Платежен доставчик — myPOS или Stripe; не блокира етапи 1–3.
 - Cloudflare API token — няма; DNS се пипа ръчно от собственика.
 - Webmail (Roundcube) за домейна — не е включен в Hestia; при нужда.
-- **Rate limit** на `/admin/login`, `/login`, `/register` и Server Actions (Redis) — прод вече е
-  публичен (2026-09-20), това е първият следващ цикъл (OPS-1).
-- Seed за админ в образа (`seed-admin.mjs` през esbuild, като `migrate.mjs`) — първият админ на
-  прода е направен през `/register` + SQL на ръка (2026-09-20).
 - Смяна на парола в `/app/settings` — паролата на прод админа е генерирана, без път за смяна.
 - Потвърждение на имейл при регистрация (`email_verified_at` остава null) — отделен цикъл.
 - Първата admin Server Action трябва сама да вика `getCurrentAdmin()` (AUTH-7 — сваленият админ
@@ -34,7 +30,10 @@
 - `CreateUserInput.isAdmin` излиза през barrel-а — регистрацията НЕ бива да го препраща от вход.
 - Кеш на `/{slug}` — само след измерен LCP на прод (ARC-6). `updated_at` вече е ключ.
 - Squatting на фирмени имена в slug (zadanie § 11) — не е решено.
-- nginx: rate limit и security headers за публичната страница и `/api/{vcard,qr}` — преди прод.
+- nginx `limit_req` като втори слой; offsite копие на `/backup/dcards`; известяване при провал на
+  backup (сега само лог); процедура за restore — да се опише и пробва.
+- Ако някога Cloudflare proxy се включи — `X-Real-IP` става IP на CF и лимитите стават глобални.
+- `/api/health/ready` е публичен без лимит и издава кой компонент е паднал.
 - QR като PNG (за печат) и `?size=` — при нужда; никога потребителски `color` към `qrcode`.
 - vCard folding (75 октета) и `PHOTO` — заедно с цикъла за качване на снимка.
 - `.vcf` на iOS/Android и Web Share на телефон през https — ръчна проверка от собственика.

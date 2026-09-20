@@ -8,10 +8,17 @@ const platform = vi.hoisted(() => ({
   isOrgMember: vi.fn(),
   createProfile: vi.fn(),
 }));
+const rateLimit = vi.hoisted(() => ({
+  consume: vi.fn(() => Promise.resolve({ allowed: true, retryAfterSec: 0 })),
+}));
 
 // Barrel-ът на `auth` носи `server-only`; `core` отваря пул при импорт.
 vi.mock('@/modules/auth', () => auth);
-vi.mock('@/modules/core', () => ({ db: {} }));
+vi.mock('@/modules/core', async () => ({
+  db: {},
+  rateLimit,
+  ...(await vi.importActual('@/modules/core/rate-limit/policy')),
+}));
 vi.mock('@/modules/platform', async (importOriginal) => ({
   ...(await importOriginal<typeof Platform>()),
   ...platform,
@@ -39,6 +46,28 @@ describe('createProfileAction', () => {
     platform.findPersonalOrganizationByOwner.mockReset().mockResolvedValue(org);
     platform.isOrgMember.mockReset().mockResolvedValue(true);
     platform.createProfile.mockReset().mockResolvedValue({ id: 'p1' });
+    rateLimit.consume.mockClear();
+    rateLimit.consume.mockResolvedValue({ allowed: true, retryAfterSec: 0 });
+  });
+
+  it('counts the action per user after the session check', async () => {
+    await expect(createProfileAction(input)).rejects.toThrow('REDIRECT:/app');
+    expect(rateLimit.consume).toHaveBeenCalledWith(
+      `rl:action:user:${user.id}`,
+      60,
+      60,
+    );
+  });
+
+  it('refuses a limited user before the membership check', async () => {
+    rateLimit.consume.mockResolvedValue({ allowed: false, retryAfterSec: 40 });
+    const result = await createProfileAction(input);
+    expect(result).toEqual({
+      ok: false,
+      message: 'Твърде много опити. Опитай след 1 минути.',
+    });
+    expect(platform.isOrgMember).not.toHaveBeenCalled();
+    expect(platform.createProfile).not.toHaveBeenCalled();
   });
 
   it('rejects invalid input before touching the session', async () => {

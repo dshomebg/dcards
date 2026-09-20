@@ -66,3 +66,11 @@
 - Спънки: `New-Secret 64` гърмеше (48 байта); Docker build без `.env` — `env()` при импорт в
   layout metadata и db/redis клиентите → placeholder ENV само в build stage.
 - Първи админ: `/register` + `is_admin` през SQL (seed не е в образа — open-items).
+
+## 2026-09-20 — OPS-1 Rate limit, seed в образа, нощен backup
+
+- Лимитер в Redis (fixed window, fail-open ≤ 250 ms) за входове, регистрация, actions, vcard/qr.
+- Одит: 6 находки — вечен ключ, целенасочен lockout, неограничени ключове, 644 dump-ове, тайни в
+  argv, увиснал Redis — всички поправени (IP първо; имейл+IP; umask 077; `-e VAR` без стойност).
+- `seed-admin.mjs` в образа (`createRequire` banner заради ioredis CJS); `backup.sh` + cron.
+- Проверено: 6-и вход отказан в браузър; 61-ва API заявка → 429; паднал Redis → 0.28 s.

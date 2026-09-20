@@ -18,6 +18,9 @@ const registration = vi.hoisted(() => ({
   registerAccount:
     vi.fn<(db: unknown, input: unknown) => Promise<RegisterResult>>(),
 }));
+const rateLimit = vi.hoisted(() => ({
+  consume: vi.fn(() => Promise.resolve({ allowed: true, retryAfterSec: 0 })),
+}));
 
 vi.mock('./session', () => session);
 vi.mock('./user.repository', () => repository);
@@ -27,8 +30,17 @@ vi.mock('next/navigation', () => ({
     throw new Error(`REDIRECT:${to}`);
   },
 }));
+vi.mock('next/headers', () => ({
+  headers: () => Promise.resolve(new Headers({ 'x-real-ip': '203.0.113.9' })),
+}));
 // `client.ts` отваря пул при импорт — тук база няма; репозиторият е мокиран.
-vi.mock('@/modules/core', () => ({ db: {} }));
+// Политиката и IP helper-ът са истински, за да се проверяват реалните ключове.
+vi.mock('@/modules/core', async () => ({
+  db: {},
+  rateLimit,
+  ...(await vi.importActual('@/modules/core/rate-limit/policy')),
+  ...(await vi.importActual('@/modules/core/rate-limit/client-ip')),
+}));
 vi.mock('argon2', async (importOriginal) => {
   const actual = await importOriginal<typeof Argon2>();
   verifySpy.mockImplementation(actual.verify);
@@ -55,10 +67,15 @@ function user(overrides: Partial<User>): User {
   };
 }
 
+const TOO_MANY = 'Твърде много опити. Опитай след 15 минути.';
+
 describe('signInUser', () => {
   beforeEach(() => {
     session.createSession.mockClear();
     verifySpy.mockClear();
+    rateLimit.consume.mockClear();
+    rateLimit.consume.mockResolvedValue({ allowed: true, retryAfterSec: 0 });
+    repository.findByEmailWithHash.mockClear();
     repository.findByEmailWithHash.mockImplementation((_db, email) => {
       const lower = email.toLowerCase();
       if (lower === 'admin@example.com') return Promise.resolve(user({}));
@@ -116,6 +133,42 @@ describe('signInUser', () => {
     ).rejects.toThrow('REDIRECT:/app');
     expect(session.createSession).toHaveBeenCalledTimes(1);
   });
+
+  it('shares the login buckets with the admin door: lowercased email and IP', async () => {
+    await expect(
+      signInUser({ email: 'Member@Example.com', password: 'correct-horse-1' }),
+    ).rejects.toThrow('REDIRECT:/app');
+
+    expect(rateLimit.consume).toHaveBeenCalledWith(
+      'rl:login:email-ip:member@example.com:203.0.113.9',
+      5,
+      900,
+    );
+    expect(rateLimit.consume).toHaveBeenCalledWith(
+      'rl:login:email:member@example.com',
+      30,
+      3600,
+    );
+    expect(rateLimit.consume).toHaveBeenCalledWith(
+      'rl:login:ip:203.0.113.9',
+      20,
+      900,
+    );
+  });
+
+  it('refuses a limited attempt before the database and the hash check', async () => {
+    rateLimit.consume.mockResolvedValue({ allowed: false, retryAfterSec: 900 });
+
+    const result = await signInUser({
+      email: 'member@example.com',
+      password: 'correct-horse-1',
+    });
+
+    expect(result).toEqual({ ok: false, message: TOO_MANY });
+    expect(repository.findByEmailWithHash).not.toHaveBeenCalled();
+    expect(verifySpy).not.toHaveBeenCalled();
+    expect(session.createSession).not.toHaveBeenCalled();
+  });
 });
 
 describe('signOutUser', () => {
@@ -138,12 +191,42 @@ describe('register', () => {
     session.createSession.mockReset();
     session.createSession.mockResolvedValue(undefined);
     registration.registerAccount.mockReset();
+    rateLimit.consume.mockClear();
+    rateLimit.consume.mockResolvedValue({ allowed: true, retryAfterSec: 0 });
   });
 
   it('rejects invalid input without touching the database', async () => {
     const result = await register({ ...valid, password: 'short' });
     expect(result.ok).toBe(false);
     expect(result.message).toMatch(/8/);
+    expect(registration.registerAccount).not.toHaveBeenCalled();
+    expect(rateLimit.consume).not.toHaveBeenCalled();
+  });
+
+  it('counts registrations by IP only', async () => {
+    registration.registerAccount.mockResolvedValue({ status: 'email_taken' });
+    await register(valid);
+
+    expect(rateLimit.consume).toHaveBeenCalledTimes(1);
+    expect(rateLimit.consume).toHaveBeenCalledWith(
+      'rl:register:ip:203.0.113.9',
+      3,
+      3600,
+    );
+  });
+
+  it('refuses a limited IP without touching registerAccount', async () => {
+    rateLimit.consume.mockResolvedValue({
+      allowed: false,
+      retryAfterSec: 3600,
+    });
+
+    const result = await register(valid);
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Твърде много опити. Опитай след 60 минути.',
+    });
     expect(registration.registerAccount).not.toHaveBeenCalled();
   });
 

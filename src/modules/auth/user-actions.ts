@@ -11,6 +11,7 @@ import {
   findAccountByEmail,
   verifyPassword,
 } from './admin-account';
+import { loginRateLimit, registerRateLimit } from './login-limit';
 import { registerAccount, type RegisterResult } from './registration';
 import { registerSchema, type SignInInput, signInSchema } from './schema';
 import { createSession, destroySession } from './session';
@@ -46,6 +47,9 @@ async function openSession(input: SignInInput): Promise<boolean> {
 export async function signInUser(input: unknown): Promise<SignInFailure> {
   const parsed = signInSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: REJECTED };
+
+  const limited = await loginRateLimit(parsed.data.email);
+  if (limited !== null) return { ok: false, message: limited };
 
   let opened: boolean;
   try {
@@ -86,6 +90,9 @@ export async function register(input: unknown): Promise<RegisterFailure> {
     const message = parsed.error.issues[0]?.message ?? 'Невалидни данни.';
     return { ok: false, message };
   }
+
+  const limited = await registerRateLimit();
+  if (limited !== null) return { ok: false, message: limited };
 
   let result: RegisterResult;
   try {

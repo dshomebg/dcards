@@ -8,6 +8,8 @@
 # през bash → ssh → Windows конзола излиза като въпросителни).
 
 set -euo pipefail
+# Dump-овете носят хешове и лични данни; на споделен хост никой друг не ги чете.
+umask 077
 
 IMAGE_TAG="${1:?missing IMAGE_TAG}"
 APP_DIR=/opt/dcards
@@ -74,10 +76,13 @@ trap 'rm -f "$DOCKER_ENV_FILE"' EXIT
 sed -E '/^[[:space:]]*(#|$)/d; s/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/\1=\2/; s/^([A-Za-z_][A-Za-z0-9_]*)='"'"'(.*)'"'"'$/\1=\2/' .env > "$DOCKER_ENV_FILE"
 
 log "applying migrations..."
+# `-e DATABASE_URL` без стойност: docker я взима от средата, а паролата не стои в
+# argv (`/proc/*/cmdline` е четим от всеки uid на споделения хост).
+export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
 docker run --rm \
   --network "${SLUG}-internal-prod" \
   --env-file "$DOCKER_ENV_FILE" \
-  -e DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}" \
+  -e DATABASE_URL \
   -e REDIS_URL="redis://redis:6379" \
   -e NODE_ENV=production \
   "${IMAGE}:${IMAGE_TAG}" \

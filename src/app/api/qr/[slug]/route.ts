@@ -9,6 +9,8 @@ import {
   slugSchema,
 } from '@/modules/platform';
 
+import { publicApiLimit } from '../../rate-limit';
+
 export const dynamic = 'force-dynamic';
 
 type Context = Readonly<{ params: Promise<{ slug: string }> }>;
@@ -20,9 +22,12 @@ function notFound(): Response {
   });
 }
 
-export async function GET(_req: Request, ctx: Context): Promise<Response> {
+export async function GET(req: Request, ctx: Context): Promise<Response> {
   const { slug } = await ctx.params;
   if (!slugSchema.safeParse(slug).success) return notFound();
+  // Лимитът е след slug валидацията (404 без Redis) и преди базата.
+  const limited = await publicApiLimit(req);
+  if (limited !== null) return limited;
   const profile = await findPublicProfileBySlug(db, slug);
   if (profile === null) return notFound();
 

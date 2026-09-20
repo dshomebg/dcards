@@ -16,6 +16,7 @@ import {
 } from '@/modules/platform';
 
 import { requireCurrent } from '../../current';
+import { userActionLimit } from '../rate-limit';
 import { profileFormSchema, type ProfileFormValues } from './schema';
 
 export interface ActionFailure {
@@ -85,6 +86,8 @@ export async function saveProfileAction(
 
   // `redirect` при липсваща сесия хвърля — затова е извън `try`.
   const { user, org } = await requireCurrent();
+  const limited = await userActionLimit(user.id);
+  if (limited !== null) return failure(limited);
 
   try {
     if (!(await isOrgMember(db, org.id, user.id))) {
@@ -112,6 +115,8 @@ export async function deleteProfileAction(
   if (!id.success) return failure(ID_INVALID);
 
   const { user, org } = await requireCurrent();
+  const limited = await userActionLimit(user.id);
+  if (limited !== null) return failure(limited);
 
   try {
     if (!(await isOrgMember(db, org.id, user.id))) {

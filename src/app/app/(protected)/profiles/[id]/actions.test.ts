@@ -10,11 +10,16 @@ const platform = vi.hoisted(() => ({
   replaceProfileLinks: vi.fn(),
   deleteProfile: vi.fn(),
 }));
+const rateLimit = vi.hoisted(() => ({
+  consume: vi.fn(() => Promise.resolve({ allowed: true, retryAfterSec: 0 })),
+}));
 
 // Barrel-ът на `auth` носи `server-only`; `core` отваря пул при импорт.
 vi.mock('@/modules/auth', () => auth);
-vi.mock('@/modules/core', () => ({
+vi.mock('@/modules/core', async () => ({
   db: { transaction: (fn: (tx: object) => unknown) => fn({}) },
+  rateLimit,
+  ...(await vi.importActual('@/modules/core/rate-limit/policy')),
 }));
 vi.mock('@/modules/platform', async (importOriginal) => ({
   ...(await importOriginal<typeof Platform>()),
@@ -76,9 +81,27 @@ beforeEach(() => {
   platform.updateProfile.mockReset().mockResolvedValue(updated);
   platform.replaceProfileLinks.mockReset().mockResolvedValue(savedLinks);
   platform.deleteProfile.mockReset().mockResolvedValue(undefined);
+  rateLimit.consume.mockClear();
+  rateLimit.consume.mockResolvedValue({ allowed: true, retryAfterSec: 0 });
 });
 
 describe('saveProfileAction', () => {
+  it('counts the action per user and refuses past the limit before touching the org', async () => {
+    rateLimit.consume.mockResolvedValue({ allowed: false, retryAfterSec: 20 });
+    const result = await saveProfileAction(profileId, input);
+    expect(result).toEqual({
+      ok: false,
+      message: 'Твърде много опити. Опитай след 1 минути.',
+    });
+    expect(rateLimit.consume).toHaveBeenCalledWith(
+      `rl:action:user:${user.id}`,
+      60,
+      60,
+    );
+    expect(platform.isOrgMember).not.toHaveBeenCalled();
+    expect(platform.updateProfile).not.toHaveBeenCalled();
+  });
+
   it('rejects a non-UUID profileId before touching the session', async () => {
     const result = await saveProfileAction('abc', input);
     expect(result).toEqual({ ok: false, message: 'Профилът не съществува.' });
@@ -162,6 +185,14 @@ describe('saveProfileAction', () => {
 });
 
 describe('deleteProfileAction', () => {
+  it('refuses a limited user before touching the org', async () => {
+    rateLimit.consume.mockResolvedValue({ allowed: false, retryAfterSec: 20 });
+    const result = await deleteProfileAction(profileId);
+    expect(result.ok).toBe(false);
+    expect(platform.isOrgMember).not.toHaveBeenCalled();
+    expect(platform.deleteProfile).not.toHaveBeenCalled();
+  });
+
   it('rejects a non-UUID profileId before touching the session', async () => {
     const result = await deleteProfileAction('abc');
     expect(result.ok).toBe(false);

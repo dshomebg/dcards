@@ -7,6 +7,7 @@ import {
   findAdminByEmail,
   verifyPassword,
 } from './admin-account';
+import { loginRateLimit } from './login-limit';
 import { type SignInInput, signInSchema } from './schema';
 import { createSession, destroySession } from './session';
 
@@ -37,6 +38,9 @@ async function openSession(input: SignInInput): Promise<boolean> {
 export async function signIn(input: unknown): Promise<SignInFailure> {
   const parsed = signInSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: REJECTED };
+
+  const limited = await loginRateLimit(parsed.data.email);
+  if (limited !== null) return { ok: false, message: limited };
 
   let opened: boolean;
   try {

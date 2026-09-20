@@ -7,6 +7,7 @@ import { db } from '@/modules/core';
 import { createProfile, isOrgMember, ProfileError } from '@/modules/platform';
 
 import { requireCurrent } from '../../current';
+import { userActionLimit } from '../rate-limit';
 import { newProfileSchema } from './schema';
 
 export interface CreateProfileFailure {
@@ -33,6 +34,8 @@ export async function createProfileAction(
 
   // `redirect` при липсваща сесия хвърля — затова е извън `try`.
   const { user, org } = await requireCurrent();
+  const limited = await userActionLimit(user.id);
+  if (limited !== null) return failure(limited);
 
   try {
     if (!(await isOrgMember(db, org.id, user.id))) {

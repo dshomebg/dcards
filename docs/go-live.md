@@ -48,9 +48,48 @@ ssh pagagal 'export PATH=$PATH:/usr/local/hestia/bin && \
   `dcards-redis-prod` — `healthy`
 - Съседите непокътнати: `docker ps --filter name=pagagal` — същите контейнери, същите uptime.
 
+## 5. Първи админ — `seed-admin.mjs` от образа
+
+Образът носи `seed-admin.mjs` (бъндълнат от `pnpm build`, до `migrate.mjs`). Пуска се като
+миграциите — еднократен контейнер в мрежата на прода, със същия обелен `.env`
+(`deploy.sh` § 4). Паролата се подава през `SEED_ADMIN_PASSWORD` от `read -s`, за да не
+остане в shell history:
+
+```bash
+ssh pagagal
+cd /opt/dcards && set -a && . ./.env && set +a
+read -rs -p 'admin password: ' SEED_ADMIN_PASSWORD; echo
+export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+ENV_FILE=$(mktemp) && sed -E '/^[[:space:]]*(#|$)/d; s/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/\1=\2/; s/^([A-Za-z_][A-Za-z0-9_]*)='"'"'(.*)'"'"'$/\1=\2/' .env > "$ENV_FILE"
+docker run --rm --network dcards-internal-prod --env-file "$ENV_FILE" \
+  -e DATABASE_URL \
+  -e REDIS_URL=redis://redis:6379 -e NODE_ENV=production \
+  -e SEED_ADMIN_PASSWORD \
+  dcards-app-prod:latest node seed-admin.mjs --email admin@example.com --name 'Име'
+rm -f "$ENV_FILE"; unset SEED_ADMIN_PASSWORD DATABASE_URL
+```
+
+Първото пускане печата `admin created: user …, organization …`; второто със същия имейл —
+`user already exists, nothing changed` (идемпотентно, нищо не се презаписва).
+
+## 6. Нощен backup — `backup.sh` (с потвърждение, PRC-2)
+
+`scripts/remote/backup.sh` прави dump на базата (`gzip -t` + проверка на заглавието) и
+`tar.gz` на тома с качените файлове в `/backup/dcards/daily/`, после трие по-старите от 14
+дни — само след успешен нов архив. Не пипа pre-deploy dump-овете, не архивира `.env`.
+
+```bash
+scp scripts/remote/backup.sh pagagal:/opt/dcards/backup.sh
+ssh pagagal 'chmod 750 /opt/dcards/backup.sh && install -d -m 700 /backup/dcards /backup/dcards/daily /backup/dcards/pre-deploy'
+ssh pagagal '/opt/dcards/backup.sh'                       # първи ръчен пуск
+ssh pagagal 'ls -la /backup/dcards/daily; zcat /backup/dcards/daily/db_*.sql.gz | head -3'
+ssh pagagal '(crontab -l 2>/dev/null; echo "0 3 * * * /opt/dcards/backup.sh >> /var/log/dcards-backup.log 2>&1") | crontab -'
+```
+
+03:00 — pagagal е в 03:20, не се застъпват. Offsite копие е отделен цикъл.
+
 ## Какво ОЩЕ не е решено
 
 - ~~Канонично `www` или без~~ — решено 2026-09-19: **с www**; `dcards-proxy.stpl` прави 301 от
   голия домейн, `APP_URL=https://www.dcards-bg.com`.
-- Backup извън pre-deploy dump-овете (нощен, извън сървъра) — pagagal има `backup.sh`; ще се
-  пренесе, когато има данни за пазене.
+- ~~Backup извън pre-deploy dump-овете~~ — нощният е § 6 (OPS-1); offsite остава отворен.
