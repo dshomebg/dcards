@@ -20,6 +20,8 @@ interface ProfileViewProps {
   readonly appUrl: string;
   /** Футърът „Създадено с" — `false` при активен Pro (`noBranding`). */
   readonly branding: boolean;
+  /** В превюто на редактора: името е `h2` — страницата вече има своя `h1`. */
+  readonly nested?: boolean;
 }
 
 type ThemeStyle = CSSProperties & {
@@ -153,8 +155,10 @@ export function ProfileView({
   appName,
   appUrl,
   branding,
+  nested = false,
 }: ProfileViewProps) {
   const fullName = `${profile.firstName} ${profile.lastName}`;
+  const Name = nested ? 'h2' : 'h1';
   const url = profileUrl(appUrl, profile.slug);
   const style = themeStyle(profile);
 
@@ -183,7 +187,9 @@ export function ProfileView({
         <Avatar profile={profile} fullName={fullName} />
 
         <header className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">{fullName}</h1>
+          <Name className="text-2xl font-semibold tracking-tight">
+            {fullName}
+          </Name>
           {profile.title !== null && (
             <p className="text-(--profile-muted)">{profile.title}</p>
           )}

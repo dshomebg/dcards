@@ -1,9 +1,9 @@
 'use server';
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db } from '@/modules/core';
 import {
   deleteProfile,
@@ -34,14 +34,6 @@ const ID_INVALID = 'Профилът не съществува.';
 /** Празното поле във формата е `''`; в базата е `null`, за да не се рендира. */
 const emptyToNull = (value: string): string | null =>
   value === '' ? null : value;
-
-function logUnexpected(where: string, error: unknown): void {
-  // Drizzle носи параметрите на заявката в `message` — само `cause` (DAT-6).
-  console.error(
-    `${where}:`,
-    error instanceof DrizzleQueryError ? error.cause : error,
-  );
-}
 
 function toServiceInput(values: ProfileFormValues) {
   return {

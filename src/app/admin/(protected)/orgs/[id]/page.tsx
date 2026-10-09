@@ -11,6 +11,7 @@ import {
   findProfilesByOrg,
   getOrganizationForAdmin,
   localDay,
+  SCAN_TIME_ZONE,
 } from '@/modules/platform';
 
 import { requireAdmin } from '../../current';
@@ -24,6 +25,12 @@ type Props = Readonly<{ params: Promise<{ id: string }> }>;
 const dateFormat = new Intl.DateTimeFormat('bg-BG', {
   dateStyle: 'medium',
   timeStyle: 'short',
+});
+
+// Изтичането е 00:00 на следващия ден — показва се последният ден, като във формата.
+const dayFormat = new Intl.DateTimeFormat('bg-BG', {
+  dateStyle: 'medium',
+  timeZone: SCAN_TIME_ZONE,
 });
 
 const ROLE_LABELS: Readonly<Record<AdminOrgMemberRow['role'], string>> = {
@@ -100,7 +107,8 @@ export default async function OrgPage(props: Props) {
           <PlanBadge plan={org.plan} planExpiresAt={org.planExpiresAt} />
           {org.planExpiresAt !== null && (
             <span className="text-text-muted">
-              до {dateFormat.format(org.planExpiresAt)}
+              до {dayFormat.format(org.planExpiresAt.getTime() - 1000)}{' '}
+              включително
             </span>
           )}
         </p>

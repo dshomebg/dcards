@@ -30,7 +30,9 @@ RUN SESSION_SECRET=build-only-placeholder-not-used-at-runtime pnpm build
 # са бъндълнати от `pnpm build` (в `standalone/`), така че не носим tsx заради тях.
 # `argon2` е native и остава external — standalone вече го съдържа в node_modules.
 FROM base AS runtime
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+# Продуктът е локален (като `SCAN_TIME_ZONE`): годината в номера на поръчката и
+# датите в писмата и екраните са по София. Node чете зоната от ICU, без tzdata.
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 TZ=Europe/Sofia
 RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs
 
 COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./

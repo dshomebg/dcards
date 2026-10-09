@@ -21,13 +21,13 @@ export function NavColumn({ section, activePath }: Props) {
     <nav
       aria-label={section.label}
       // Превъртането е ТУК, не на двойката: инак дългият списък отнася и лентата
-      // нагоре. `ps-5` е по-голямо от `pe-3` по искане на собственика (`ADM-22`)
+      // нагоре. `ps-5` е по-голямо от `pe-3` по искане на собственика
       // — между лентата и списъка да остане въздух, вместо двете да са долепени.
       className="flex w-56 shrink-0 flex-col gap-2 overflow-y-auto border-e border-border bg-nav py-4 pe-3 ps-5"
     >
-      {/* ⚠ Главата ОСТАВА, макар лентата вече да носи имената (`ADM-22`): тук
+      {/* ⚠ Главата ОСТАВА, макар лентата вече да носи имената: тук
           тя казва „списъкът отдолу е на тази секция", а не коя е избрана.
-          Собственикът я иска именно тук (`ADM-15` § 7). */}
+          Собственикът я иска именно тук. */}
       <p className="text-text-muted px-2 text-xs font-medium tracking-wide uppercase">
         {section.label}
       </p>

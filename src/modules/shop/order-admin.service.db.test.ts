@@ -7,6 +7,7 @@ import { addLine, emptyCart } from './cart';
 import { orders, type OrderStatus } from './order.schema';
 import { OrderError, placeOrder } from './order.service';
 import {
+  countOrderPagesForAdmin,
   getOrderForAdmin,
   listOrdersForAdmin,
   lockOrderForCards,
@@ -273,6 +274,9 @@ describe('listOrdersForAdmin / getOrderForAdmin', () => {
     const shipped = await listOrdersForAdmin(db, 'shipped');
     expect(shipped.map((row) => row.id)).toContain(b.id);
     expect(shipped.map((row) => row.id)).not.toContain(a.id);
+    expect(await countOrderPagesForAdmin(db, 'shipped')).toBe(1);
+    // Втората страница при < 50 поръчки е празна — offset-ът работи.
+    expect(await listOrdersForAdmin(db, 'shipped', 2)).toEqual([]);
 
     const dto = await getOrderForAdmin(db, a.id);
     expect(dto).toMatchObject({

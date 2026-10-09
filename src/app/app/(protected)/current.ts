@@ -45,8 +45,10 @@ export async function loadCurrent(): Promise<Current | null> {
  * изпълнява при мека навигация. Без сесия → `/login`. `orgId` идва оттук,
  * никога от формата (AUTH-2).
  */
-export async function requireCurrent(): Promise<Current> {
-  return (await loadCurrent()) ?? redirect('/login');
+export async function requireCurrent(next?: string): Promise<Current> {
+  const login =
+    next === undefined ? '/login' : `/login?next=${encodeURIComponent(next)}`;
+  return (await loadCurrent()) ?? redirect(login);
 }
 
 /** Само собственикът на текущата org; editor → `/app` (actions на `/app/org`). */

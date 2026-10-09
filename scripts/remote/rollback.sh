@@ -44,6 +44,7 @@ done
 log "WARNING: rolled back to ${TARGET}, but health check did NOT return 200."
 cat /tmp/dcards-ready.json 2>/dev/null || true
 echo
+docker logs --tail 20 dcards-app-prod 2>&1 || true
 log "If the database schema is the cause, pre-deploy dumps are in:"
 log "  /backup/dcards/pre-deploy/"
 exit 1

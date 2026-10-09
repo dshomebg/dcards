@@ -3,9 +3,9 @@
 // Снимката и логото се записват ВЕДНАГА при избор, не със „Запази": файл →
 // диск → ключ в базата → старият файл се трие. Приема файл, никога ключ.
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { z } from 'zod';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import {
   createObjectKey,
   db,
@@ -50,14 +50,6 @@ const argsSchema = z.object({
 const PROCESS = { photo: processPhoto, logo: processLogo } as const;
 const FOLDER = { photo: 'photos', logo: 'logos' } as const;
 
-/** Само име и код — байтовете, името на файла и ключът не влизат в лога. */
-function logUnexpected(where: string, error: unknown): void {
-  const err = (error instanceof DrizzleQueryError ? error.cause : error) as
-    { name?: string; code?: string } | undefined;
-  console.error(`${where} failed:`, err?.name, err?.code);
-}
-
-/** Провалът на триене е само лог — сирачето не бива да връща грешка на човека. */
 /** Провалът на триене е лог, не грешка — редът в базата е вече верен. */
 export async function deleteQuietly(key: string | null): Promise<void> {
   if (key === null) return;

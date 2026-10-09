@@ -33,9 +33,17 @@ function url(value: string): string | null {
   return /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : null;
 }
 
-/** Има ли вече схема (`x:`) — тогава минава само през `url()`, не се допълва. */
+/**
+ * Има ли вече схема (`x:`) — тогава минава само през `url()`, не се допълва.
+ * `demo.bg:8080` е хост с порт, не схема: име с точка и само цифри след `:`
+ * (`tel:0888…` няма точка — остава схема и пада).
+ */
 function hasScheme(value: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(value.trim());
+  const trimmed = value.trim();
+  if (/^[a-z0-9-]+(?:\.[a-z0-9-]+)+:\d+(?:[/?#]|$)/i.test(trimmed)) {
+    return false;
+  }
+  return /^[a-z][a-z0-9+.-]*:/i.test(trimmed);
 }
 
 function urlOrHttps(value: string): string | null {

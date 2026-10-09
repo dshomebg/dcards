@@ -90,10 +90,43 @@ ssh pagagal 'ls -la /backup/dcards/daily; zcat /backup/dcards/daily/db_*.sql.gz 
 ssh pagagal '(crontab -l 2>/dev/null; echo "0 3 * * * /opt/dcards/backup.sh >> /var/log/dcards-backup.log 2>&1") | crontab -'
 ```
 
-03:00 — pagagal е в 03:20, не се застъпват. Offsite копие е отделен цикъл.
+03:00 — pagagal е в 03:20, не се застъпват. Offsite копие е отделен цикъл. При провал
+`backup.sh` праща писмо до `MAIL_ADMIN_TO` през exim на хоста.
+
+## 7. Седмични — учение за възстановяване и чистене на качените (с потвърждение)
+
+`restore-check.sh` зарежда последния dump във временен `dcards-restore-check` (без мрежа и
+том, трие се сам) и брои редовете; при провал — писмо. `cleanup-uploads.sh` без аргумент само
+изброява файлове над 30 дни, към които базата не сочи; с `--delete` ги трие.
+
+```bash
+scp scripts/remote/backup.sh scripts/remote/restore-check.sh scripts/remote/cleanup-uploads.sh pagagal:/opt/dcards/
+ssh pagagal 'chmod 750 /opt/dcards/*.sh && /opt/dcards/restore-check.sh && /opt/dcards/cleanup-uploads.sh'
+ssh pagagal '(crontab -l; echo "0 5 * * 0 /opt/dcards/restore-check.sh >> /var/log/dcards-restore-check.log 2>&1"; echo "30 4 * * 0 /opt/dcards/cleanup-uploads.sh --delete >> /var/log/dcards-cleanup.log 2>&1") | crontab -'
+```
+
+## 8. Истинско възстановяване (само собственикът)
+
+Сменя базата на прода с архив — преди това се пуска `backup.sh`, за да има копие на текущото.
+
+```bash
+ssh pagagal
+cd /opt/dcards && set -a && . ./.env && set +a
+./backup.sh                                               # копие на текущото състояние
+DUMP=/backup/dcards/daily/db_<дата>.sql.gz                # избраният архив
+docker stop dcards-app-prod
+docker exec dcards-postgres-prod dropdb -U "$POSTGRES_USER" "$POSTGRES_DB"
+docker exec dcards-postgres-prod createdb -U "$POSTGRES_USER" "$POSTGRES_DB"
+zcat "$DUMP" | docker exec -i dcards-postgres-prod psql -q -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+# Качените файлове — само ако и те са загубени:
+# tar -xzf /backup/dcards/daily/uploads_<дата>.tar.gz -C "$(docker volume inspect dcards-uploads-data-prod --format '{{.Mountpoint}}')"
+docker start dcards-app-prod && curl -s http://127.0.0.1:3010/api/health/ready
+```
+
+Сесиите и количките са в Redis и не се връщат — клиентите влизат отново.
 
 ## Какво ОЩЕ не е решено
 
 - ~~Канонично `www` или без~~ — решено 2026-09-19: **с www**; `dcards-proxy.stpl` прави 301 от
   голия домейн, `APP_URL=https://www.dcards-bg.com`.
-- ~~Backup извън pre-deploy dump-овете~~ — нощният е § 6 (OPS-1); offsite остава отворен.
+- ~~Backup извън pre-deploy dump-овете~~ — нощният е § 6 (OPS-1); offsite остава отворен (чака избор на място от собственика).

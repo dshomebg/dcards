@@ -1,8 +1,8 @@
 'use server';
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db, tooManyMessage } from '@/modules/core';
 import { OrganizationError, updateOrganizationPlan } from '@/modules/platform';
 
@@ -17,18 +17,6 @@ const failure = (message: string): PlanActionResult => ({
   ok: false,
   message,
 });
-
-function logUnexpected(where: string, error: unknown): void {
-  // Drizzle носи параметрите в `message`, а pg `detail` — реда с имейла на
-  // собственика. Логват се само код и constraint (DAT-6).
-  if (error instanceof DrizzleQueryError) {
-    const cause = error.cause as
-      { code?: string; constraint_name?: string } | undefined;
-    console.error(`${where}: db error`, cause?.code, cause?.constraint_name);
-    return;
-  }
-  console.error(`${where}:`, error instanceof Error ? error.name : 'error');
-}
 
 /** Zod → админ (извън `try`) → лимит → запис → revalidate. */
 export async function setOrgPlanAction(

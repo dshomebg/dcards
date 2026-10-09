@@ -8,6 +8,8 @@ describe('linkHref — one case per type', () => {
     ['phone', '+359 (88) 123-4567', 'tel:+359881234567'],
     ['email', 'ivan@demo.bg', 'mailto:ivan@demo.bg'],
     ['website', 'demo.bg', 'https://demo.bg'],
+    ['website', 'demo.bg:8080', 'https://demo.bg:8080'],
+    ['custom', 'demo.bg:8080/shop?a=1', 'https://demo.bg:8080/shop?a=1'],
     ['custom', 'https://example.com/a?b=1', 'https://example.com/a?b=1'],
     ['linkedin', '@ivan-petrov', 'https://www.linkedin.com/in/ivan-petrov'],
     [
@@ -38,6 +40,7 @@ describe('linkHref — unsafe schemes', () => {
     '%s refuses javascript: and data:',
     (type) => {
       expect(linkHref(type, 'javascript:alert(1)')).toBeNull();
+      expect(linkHref(type, 'tel:0888123456')).toBeNull();
       expect(linkHref(type, 'data:text/html,hi')).toBeNull();
     },
   );

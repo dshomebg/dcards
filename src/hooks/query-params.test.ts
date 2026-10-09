@@ -5,10 +5,35 @@ import {
   applyParams,
   buildHref,
   readOption,
+  readPage,
   readText,
 } from './query-params';
 
 const STATUSES = ['draft', 'active', 'archived'] as const;
+
+describe('readPage', () => {
+  it.each([
+    [undefined, 1],
+    ['abc', 1],
+    ['0', 1],
+    ['-2', 1],
+    ['2.5', 1],
+    ['3', 3],
+    ['99', 4],
+    [['2', '3'], 2],
+  ] as const)('%s → %s при 4 страници', (raw, expected) => {
+    expect(readPage(raw, 4)).toBe(expected);
+  });
+});
+
+describe('applyFilters и страницата', () => {
+  it('маха страницата при смяна на филтър', () => {
+    const next = applyFilters(new URLSearchParams('page=3&status=cod'), {
+      status: 'shipped',
+    });
+    expect(next.toString()).toBe('status=shipped');
+  });
+});
 
 describe('applyFilters', () => {
   it('маха курсора при смяна на филтър', () => {

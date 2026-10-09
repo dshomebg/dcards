@@ -32,8 +32,14 @@ UPLOADS_ARCHIVE="$BACKUP_DIR/uploads_${STAMP}.tar.gz"
 # ⚠ При провал частичният файл се маха: отрязан dump изглежда като архив.
 # `fail` чисти сам — в `cmd || fail` ERR trap-ът не се задейства; той е за останалото.
 cleanup_partial() { rm -f "$DUMP" "$UPLOADS_ARCHIVE"; }
-fail() { log "FAILED: $*"; cleanup_partial; exit 1; }
-trap cleanup_partial ERR
+# Провал, видян само в лога, не е видян — писмо през exim на хоста.
+alert() {
+  [ -n "${MAIL_ADMIN_TO:-}" ] || return 0
+  printf 'To: %s\nSubject: [%s] nightly backup FAILED\n\n%s\nLog: /var/log/dcards-backup.log\n' \
+    "$MAIL_ADMIN_TO" "$SLUG" "$1" | /usr/sbin/sendmail -- "$MAIL_ADMIN_TO" || true
+}
+fail() { log "FAILED: $*"; cleanup_partial; alert "$*"; exit 1; }
+trap 'cleanup_partial; alert "unexpected error at line $LINENO"' ERR
 
 log "starting nightly backup, stamp $STAMP"
 

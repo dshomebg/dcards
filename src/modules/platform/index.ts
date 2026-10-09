@@ -55,21 +55,23 @@ export { type CardRoute, resolveCard } from './card-router';
 export { cardUrl } from './card-url';
 export { LINK_LABELS, linkHref } from './link-href';
 export {
+  createPersonalOrganization,
+  findPersonalOrganizationByOwner,
+  isOrgMember,
+} from './organization.repository';
+export { type Organization, type OrgMember } from './organization.schema';
+export {
   type AdminOrganizationDetail,
   type AdminOrganizationRow,
   type AdminOrgMemberRow,
   countOrganizations,
-  createPersonalOrganization,
-  findPersonalOrganizationByOwner,
   getOrganizationForAdmin,
-  isOrgMember,
   listMembershipsForUsers,
   type PlanUpdate,
   searchOrganizations,
   updateOrganizationPlan,
   type UserMembershipRow,
-} from './organization.repository';
-export { type Organization, type OrgMember } from './organization.schema';
+} from './organization-admin.repository';
 export {
   listPendingInvitations,
   type PendingInvitationRow,
@@ -102,7 +104,7 @@ export {
   type OrganizationErrorCode,
   PLAN_LABELS,
 } from './organization-plan';
-export { can, effectivePlan, type Feature } from './plan';
+export { can, effectivePlan, type Feature, PLAN_LIMITS } from './plan';
 export { findProfilesByOrg } from './profile.repository';
 export {
   PROFILE_LINK_TYPES,
@@ -151,7 +153,7 @@ export {
   type ProScanAnalytics,
   type ScanAnalytics,
 } from './scan-analytics.service';
-export { type DayCount, localDay } from './scan-days';
+export { type DayCount, localDay, SCAN_TIME_ZONE } from './scan-days';
 export { classifyDevice, isBot } from './scan-device';
 export { logScanFailure } from './scan-log';
 export { RESERVED_SLUGS, slugSchema } from './slug';

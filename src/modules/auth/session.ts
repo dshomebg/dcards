@@ -10,9 +10,9 @@ import { env, redis } from '@/modules/core';
 import type { SessionUser } from './schema';
 
 /**
- * Срокът на сесията — ЕДНОТО число, от което се четат TTL-ът в Redis и
- * `maxAge` на cookie-то (AUTH-4 в `decisions.md`). Плъзгащ: всяко четене го
- * подновява в Redis; cookie-то се издава веднъж, при вход.
+ * Срокът на сесията — ЕДНОТО число за TTL в Redis и `maxAge` на cookie-то.
+ * Твърд, не плъзгащ (AUTH-4): cookie-то се издава веднъж, а плъзгането в Redis
+ * само държеше жива открадната cookie, пратена ръчно след седмицата.
  */
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
@@ -54,12 +54,7 @@ export async function readSession(): Promise<SessionUser | null> {
   try {
     const raw = await redis.get(keyOf(id));
     if (raw === null) return null;
-
-    await redis.expire(keyOf(id), SESSION_TTL_SECONDS);
-    const user = JSON.parse(raw) as SessionUser;
-    // Плъзга и индекса — иначе множеството изтича 7 дни след входа.
-    await redis.expire(userKeyOf(user.id), SESSION_TTL_SECONDS);
-    return user;
+    return JSON.parse(raw) as SessionUser;
   } catch {
     return null;
   }

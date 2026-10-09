@@ -6,11 +6,11 @@ import { LinksFields } from './links-fields';
 import { type ProfileFormValues, toFormValues } from './schema';
 import { testProfile } from './test-fixtures';
 
-function Harness() {
+function Harness({ maxLinks }: { readonly maxLinks?: number | null }) {
   const form = useForm<ProfileFormValues>({
     defaultValues: toFormValues(testProfile()),
   });
-  return <LinksFields form={form} />;
+  return <LinksFields form={form} maxLinks={maxLinks} />;
 }
 
 const valueOf = (label: string) =>
@@ -29,6 +29,19 @@ describe('LinksFields', () => {
     expect(valueOf('Линк 2: етикет')).toBe('Пиши ми');
     const switches = screen.getAllByRole<HTMLInputElement>('switch');
     expect(switches.map((s) => s.checked)).toEqual([true, false, true]);
+  });
+
+  it('warns above the plan cap and clears once enough rows are removed', () => {
+    render(<Harness maxLinks={2} />);
+    expect(screen.getByRole('alert').textContent).toContain('Премахни 1');
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Премахни' })[2]!);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('never warns without a cap', () => {
+    render(<Harness />);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('adds a row and removes it', () => {

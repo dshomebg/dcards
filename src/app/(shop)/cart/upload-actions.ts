@@ -3,6 +3,7 @@
 // Логото се качва ВЕДНАГА при избор, отделно от „Добави": формата получава
 // ключ и го носи в `personalization.logoKey`. Ред: размер → лимит → sharp → диск.
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import {
   createLogoKey,
   ImageError,
@@ -24,12 +25,6 @@ const failure = (message: string): UploadLogoResult => ({
 
 const FAILED = 'Логото не беше качено — опитай пак след малко.';
 
-/** Само име и код — байтовете и името на файла не влизат в лога. */
-function logUnexpected(error: unknown): void {
-  const err = error as { name?: string; code?: string } | undefined;
-  console.error('uploadLogoAction failed:', err?.name, err?.code);
-}
-
 export async function uploadLogoAction(
   formData: FormData,
 ): Promise<UploadLogoResult> {
@@ -49,7 +44,7 @@ export async function uploadLogoAction(
     return { ok: true, key };
   } catch (error) {
     if (error instanceof ImageError) return failure(error.message);
-    logUnexpected(error);
+    logUnexpected('uploadLogoAction', error);
     return failure(FAILED);
   }
 }

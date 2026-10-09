@@ -9,3 +9,4 @@ export { RowAction } from './row-action';
 export { SearchFilter } from './search-filter';
 export { SelectFilter } from './select-filter';
 export { TableSkeleton } from './table-skeleton';
+export { UrlPagePager } from './url-page-pager';

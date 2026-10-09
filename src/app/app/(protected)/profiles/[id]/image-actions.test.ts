@@ -199,11 +199,10 @@ describe('uploadProfileImageAction', () => {
     const result = await upload('photo', form(await png(4, 4)));
     expect(result.ok).toBe(false);
     expect(result.ok || result.message).not.toContain('/srv');
-    expect(error).toHaveBeenCalledWith(
-      'uploadProfileImageAction failed:',
-      'Error',
-      'EACCES',
-    );
+    const logged = JSON.stringify(error.mock.calls);
+    expect(logged).toContain('uploadProfileImageAction:');
+    expect(logged).toContain('EACCES');
+    expect(logged).not.toContain('/srv/secret');
     error.mockRestore();
   });
 });

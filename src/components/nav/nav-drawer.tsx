@@ -92,7 +92,7 @@ export function NavDrawer() {
         className={
           // Прилепен ВЛЯВО (`m-0 me-auto`): подразбиращото се `margin: auto`
           // увисваше панела в средата. Ширината е по СЪДЪРЖАНИЕТО, а
-          // `overflow-x-auto` пази колоната от рязане при 320 px (`ADM-22`).
+          // `overflow-x-auto` пази колоната от рязане при 320 px.
           'm-0 me-auto h-dvh max-h-dvh w-fit max-w-[92vw] overflow-x-auto p-0 ' +
           'border-e border-border bg-nav text-text backdrop:bg-overlay/50 ' +
           WIDE_MARKER

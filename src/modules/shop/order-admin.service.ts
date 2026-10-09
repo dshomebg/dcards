@@ -8,6 +8,7 @@ import type { DbExecutor } from '@/modules/core';
 
 import {
   countOrdersByStatuses,
+  countOrdersForAdmin,
   findOrderById,
   findOrderItemsByOrder,
   findOrdersForAdmin,
@@ -66,11 +67,26 @@ export interface AdminOrderSummaryDto {
   readonly createdAt: Date;
 }
 
+export const ADMIN_ORDERS_PAGE_SIZE = 50;
+
+/** Брой страници за филтъра — поне 1, за да има какво да се покаже празно. */
+export async function countOrderPagesForAdmin(
+  executor: DbExecutor,
+  status?: OrderStatus,
+): Promise<number> {
+  const total = await countOrdersForAdmin(executor, status);
+  return Math.max(1, Math.ceil(total / ADMIN_ORDERS_PAGE_SIZE));
+}
+
 export async function listOrdersForAdmin(
   executor: DbExecutor,
   status?: OrderStatus,
+  page = 1,
 ): Promise<AdminOrderSummaryDto[]> {
-  const rows = await findOrdersForAdmin(executor, status);
+  const rows = await findOrdersForAdmin(executor, status, {
+    limit: ADMIN_ORDERS_PAGE_SIZE,
+    offset: (page - 1) * ADMIN_ORDERS_PAGE_SIZE,
+  });
   return rows.map((row) => {
     const customer = orderCustomerSchema.safeParse(row.customer);
     return {

@@ -99,7 +99,7 @@ export default tseslint.config(
 
   {
     // Развойните скриптове викат инструменти по име (`git`, `docker`) и печатат.
-    files: ['scripts/**/*.ts'],
+    files: ['scripts/**/*.ts', 'vitest.globalSetup.db.ts'],
     rules: {
       'sonarjs/no-os-command-from-path': 'off',
       'no-console': 'off',
@@ -107,7 +107,7 @@ export default tseslint.config(
   },
 
   {
-    files: ['*.config.mjs', '*.config.ts'],
+    files: ['*.config.mjs', '*.config.ts', 'vitest.*.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',

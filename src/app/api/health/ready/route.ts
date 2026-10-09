@@ -18,8 +18,11 @@ export async function GET() {
     // остава false
   }
   const ready = checks.database && checks.redis;
+  // Кой компонент е паднал — само в лога (`deploy.sh` го показва): всеки на
+  // споделения хост стига до порта, а хедърите се подправят.
+  if (!ready) console.error('health: degraded', checks);
   return Response.json(
-    { status: ready ? 'ready' : 'degraded', checks },
+    { status: ready ? 'ready' : 'degraded' },
     { status: ready ? 200 : 503 },
   );
 }

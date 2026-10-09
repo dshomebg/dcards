@@ -18,22 +18,26 @@ import {
 // Случайно име, не брояч: vitest връща `process.env` между файловете.
 const database = `${TEMPLATE_DATABASE}_${randomUUID().replaceAll('-', '')}`;
 
+type Sql = ReturnType<typeof postgres>;
+
 /** Копирането пада с 55006, ако някой е в образеца точно сега — изчаква се. */
+async function createFromTemplate(sql: Sql, attempt = 1): Promise<void> {
+  try {
+    await sql`CREATE DATABASE ${sql(database)} TEMPLATE ${sql(TEMPLATE_DATABASE)}`;
+  } catch (error) {
+    if (attempt === 5) throw error;
+    await sleep(100 * attempt);
+    await createFromTemplate(sql, attempt + 1);
+  }
+}
+
 async function cloneTemplate(): Promise<void> {
   const sql = postgres(MAINTENANCE_DATABASE_URL, {
     max: 1,
     onnotice: () => {},
   });
   try {
-    for (let attempt = 1; ; attempt += 1) {
-      try {
-        await sql`CREATE DATABASE ${sql(database)} TEMPLATE ${sql(TEMPLATE_DATABASE)}`;
-        return;
-      } catch (error) {
-        if (attempt === 5) throw error;
-        await sleep(100 * attempt);
-      }
-    }
+    await createFromTemplate(sql);
   } finally {
     await sql.end({ timeout: 5 });
   }

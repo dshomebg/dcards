@@ -1,8 +1,8 @@
 'use server';
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db, tooManyMessage } from '@/modules/core';
 import {
   CardError,
@@ -21,18 +21,6 @@ const failure = (message: string): CardActionResult => ({
   ok: false,
   message,
 });
-
-function logUnexpected(where: string, error: unknown): void {
-  // Drizzle носи параметрите в `message`, а pg `detail` — целия ред (с кода за
-  // активация). Логват се само код и constraint (DAT-6).
-  if (error instanceof DrizzleQueryError) {
-    const cause = error.cause as
-      { code?: string; constraint_name?: string } | undefined;
-    console.error(`${where}: db error`, cause?.code, cause?.constraint_name);
-    return;
-  }
-  console.error(`${where}:`, error);
-}
 
 type CardOperation = (executor: typeof db, cardId: string) => Promise<void>;
 

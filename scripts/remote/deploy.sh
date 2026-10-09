@@ -112,6 +112,8 @@ if [ "$HEALTHY" != "1" ]; then
   log "FAILED: no 200 response. Last body:"
   cat /tmp/dcards-ready.json 2>/dev/null || true
   echo
+  # Кой компонент е паднал, health казва само в лога (SEC-1).
+  docker logs --tail 20 "${SLUG}-app-prod" 2>&1 || true
   log "Previous release images are still here - roll back with:"
   log "  .\\scripts\\rollback-prod.ps1"
   log "If a migration is to blame, the pre-migration dump is at: $DUMP"

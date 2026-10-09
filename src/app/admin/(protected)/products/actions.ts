@@ -1,10 +1,10 @@
 'use server';
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db, tooManyMessage } from '@/modules/core';
 import {
   createProduct,
@@ -35,18 +35,6 @@ const LIST_PATH = '/admin/products';
 /** Празното поле във формата е `''`; в базата е `null`. */
 const emptyToNull = (value: string): string | null =>
   value === '' ? null : value;
-
-function logUnexpected(where: string, error: unknown): void {
-  // Drizzle носи параметрите в `message`, а `detail` — целия ред. Логват се
-  // само код и constraint (DAT-6); драйверът `postgres` го нарича `constraint_name`.
-  if (error instanceof DrizzleQueryError) {
-    const cause = error.cause as
-      { code?: string; constraint_name?: string } | undefined;
-    console.error(`${where}: db error`, cause?.code, cause?.constraint_name);
-    return;
-  }
-  console.error(`${where}:`, error);
-}
 
 function toServiceInput(values: ProductFormOutput) {
   return {

@@ -6,6 +6,7 @@
  */
 
 export const CURSOR_PARAM = 'cursor';
+export const PAGE_PARAM = 'page';
 
 /** `undefined` или празен низ маха ключа — иначе адресът се пълни с `search=`. */
 export type ParamChanges = Readonly<Record<string, string | undefined>>;
@@ -33,8 +34,8 @@ export function applyParams(
 }
 
 /**
- * Смяна на филтър. Курсорът пада ВИНАГИ — иначе човек остава на страница 3 от
- * предишния резултат и вижда празен списък при съществуващи съвпадения.
+ * Смяна на филтър. Курсорът и страницата падат ВИНАГИ — иначе човек остава на
+ * страница 3 от предишния резултат и вижда празен списък при съществуващи съвпадения.
  */
 export function applyFilters(
   current: URLSearchParams,
@@ -42,7 +43,15 @@ export function applyFilters(
 ): URLSearchParams {
   const next = applyParams(current, changes);
   next.delete(CURSOR_PARAM);
+  next.delete(PAGE_PARAM);
   return next;
+}
+
+/** Номер на страница от адреса: всичко неразпознато е 1, над края — последната. */
+export function readPage(raw: RawParam, pageCount: number): number {
+  const value = Number(firstValue(raw));
+  if (!Number.isInteger(value) || value < 1) return 1;
+  return Math.min(value, pageCount);
 }
 
 export function buildHref(pathname: string, params: URLSearchParams): string {

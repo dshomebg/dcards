@@ -42,6 +42,9 @@ export const RATE_POLICY = {
   inviteOrg: { limit: 10, windowSec: 3600 },
   // `/invite` е без auth и чете базата на всеки токен — таван по IP.
   inviteIp: { limit: 30, windowSec: 900 },
+  // Предпазител за репутацията на домейна, не за човек: реалният обем е десетки
+  // писма на ден, а пробив в някой лимит отгоре не бива да прати хиляди.
+  mailGlobal: { limit: 100, windowSec: 3600 },
 } as const satisfies Record<string, RatePolicy>;
 
 export const rateKey = {
@@ -67,6 +70,8 @@ export const rateKey = {
   imageUploadUser: (userId: string) => `rl:image-upload:user:${userId}`,
   inviteOrg: (orgId: string) => `rl:invite:org:${orgId}`,
   inviteIp: (ip: string) => `rl:invite:ip:${ip}`,
+  mailGlobal: () => 'rl:mail:global',
+  mailCapAlert: () => 'rl:mail:cap-alert',
 } as const;
 
 export function tooManyMessage(retryAfterSec: number): string {

@@ -3,10 +3,10 @@
 // Единственото място, където `shop` и `platform` се срещат (ARC-2): поръчката се
 // заключва в `shop`, картите се местят в `platform`, в една транзакция.
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db, env, sendMail, tooManyMessage } from '@/modules/core';
 import {
   assignCardsFromBatch,
@@ -49,18 +49,6 @@ const INVALID = 'Невалидни данни.';
 const FAILED = 'Промяната не беше записана — опитай пак след малко.';
 const NO_MAIL =
   'Статусът е записан, но имейлът в поръчката е невалиден — писмо не е пратено.';
-
-function logUnexpected(where: string, error: unknown): void {
-  // Drizzle носи параметрите в `message`, а `detail` — целия ред с данните на
-  // клиента. Логват се само код и constraint (DAT-6).
-  if (error instanceof DrizzleQueryError) {
-    const cause = error.cause as
-      { code?: string; constraint_name?: string } | undefined;
-    console.error(`${where}: db error`, cause?.code, cause?.constraint_name);
-    return;
-  }
-  console.error(`${where}:`, error instanceof Error ? error.name : 'error');
-}
 
 interface Outcome {
   readonly notice?: string;

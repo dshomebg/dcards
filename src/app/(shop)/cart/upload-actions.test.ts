@@ -123,11 +123,10 @@ describe('uploadLogoAction', () => {
     );
     expect(result.ok).toBe(false);
     expect(result.ok || result.message).not.toContain('/srv');
-    expect(error).toHaveBeenCalledWith(
-      'uploadLogoAction failed:',
-      'Error',
-      'EACCES',
-    );
+    const logged = JSON.stringify(error.mock.calls);
+    expect(logged).toContain('uploadLogoAction:');
+    expect(logged).toContain('EACCES');
+    expect(logged).not.toContain('/srv/secret');
     error.mockRestore();
   });
 });

@@ -41,12 +41,14 @@ export function ThemeFields({ form, customTheme, hasLogo }: Props) {
         name="theme.primaryColor"
         render={({ field }) => (
           <div className="flex items-end gap-2">
-            {/* `''` при `null`: браузърът сам показва подразбирания си цвят, без hex тук. */}
+            {/* `''` при `null` браузърът рисува черно — затова бледо и „Не е избран". */}
             <Field
               label="Основен цвят"
               type="color"
               width="short"
               hint="Бутонът за контакт, инициалите и фирмата. Без цвят — цветът на темата."
+              note={field.value === null ? 'Не е избран.' : undefined}
+              className={field.value === null ? 'opacity-40' : undefined}
               error={errors.theme?.primaryColor?.message}
               {...field}
               disabled={!customTheme}

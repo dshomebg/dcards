@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 
 import { loadCurrent } from '@/app/app/(protected)/current';
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db, env, sendMail } from '@/modules/core';
 import {
   emptyCart,
@@ -41,20 +42,6 @@ const failure = (message: string): CheckoutActionFailure => ({
 const FAILED = 'Поръчката не беше записана — опитай пак след малко.';
 
 const BUSY = 'Поръчката вече се обработва — изчакай малко.';
-
-/**
- * Само име, код и constraint — `message` носи параметрите, а `detail` при
- * CHECK носи целия ред с личните данни на клиента (DAT-6).
- */
-function logUnexpected(where: string, error: unknown): void {
-  const cause = error instanceof Error ? error.cause : undefined;
-  const db = cause as { code?: string; constraint_name?: string } | undefined;
-  console.error(
-    `${where}: ${error instanceof Error ? error.name : 'error'}`,
-    db?.code,
-    db?.constraint_name,
-  );
-}
 
 /** Клиентът и (по избор) админът; `sendMail` не хвърля. Адресът не се нормализира. */
 async function notify(placed: PlacedOrder, to: string): Promise<void> {

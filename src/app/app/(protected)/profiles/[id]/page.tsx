@@ -6,7 +6,12 @@ import { notFound } from 'next/navigation';
 import { z } from 'zod';
 
 import { db, env } from '@/modules/core';
-import { can, getProfileForEdit } from '@/modules/platform';
+import {
+  can,
+  effectivePlan,
+  getProfileForEdit,
+  PLAN_LIMITS,
+} from '@/modules/platform';
 
 import { requireCurrent } from '../../current';
 import { ProfileEditor } from './profile-editor';
@@ -32,6 +37,7 @@ export default async function Page(props: Props) {
       plan={{
         customTheme: can(org, 'customTheme'),
         branding: !can(org, 'noBranding'),
+        maxLinks: PLAN_LIMITS[effectivePlan(org)].links,
       }}
       appName={APP_NAME}
       appUrl={APP_URL}

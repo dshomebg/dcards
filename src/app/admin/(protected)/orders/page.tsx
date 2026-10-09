@@ -9,10 +9,13 @@ import {
   FilterBar,
   ListState,
   SelectFilter,
+  UrlPagePager,
 } from '@/components/list';
+import { readPage } from '@/hooks/query-params';
 import { db, env } from '@/modules/core';
 import {
   type AdminOrderSummaryDto,
+  countOrderPagesForAdmin,
   formatPrice,
   listOrdersForAdmin,
   ORDER_STATUS_LABELS,
@@ -30,7 +33,10 @@ import {
 export const metadata: Metadata = { title: 'Поръчки' };
 
 type Props = Readonly<{
-  searchParams: Promise<{ status?: string | string[] }>;
+  searchParams: Promise<{
+    status?: string | string[];
+    page?: string | string[];
+  }>;
 }>;
 
 const dateFormat = new Intl.DateTimeFormat('bg-BG', {
@@ -87,9 +93,11 @@ const statusFilter = z.enum(ORDER_STATUSES).optional().catch(undefined);
 
 export default async function OrdersPage(props: Props) {
   await requireAdmin();
-  const { status } = await props.searchParams;
+  const { status, page: rawPage } = await props.searchParams;
   const filter = statusFilter.parse(status);
-  const orders = await listOrdersForAdmin(db, filter);
+  const pageCount = await countOrderPagesForAdmin(db, filter);
+  const page = readPage(rawPage, pageCount);
+  const orders = await listOrdersForAdmin(db, filter, page);
   const { STORE_CURRENCY, STORE_LOCALE } = env();
   const format = { currency: STORE_CURRENCY, locale: STORE_LOCALE };
 
@@ -116,12 +124,15 @@ export default async function OrdersPage(props: Props) {
           hint="Поръчките идват от магазина — най-новите са първи."
         />
       ) : (
-        <DataTable
-          caption="Поръчки"
-          columns={columns(format)}
-          rows={orders}
-          rowKey={(order) => order.id}
-        />
+        <>
+          <DataTable
+            caption="Поръчки"
+            columns={columns(format)}
+            rows={orders}
+            rowKey={(order) => order.id}
+          />
+          <UrlPagePager page={page} pageCount={pageCount} />
+        </>
       )}
     </main>
   );

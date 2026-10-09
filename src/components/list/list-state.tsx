@@ -6,7 +6,7 @@ import { cardStyles } from '../ui/surface';
 type ListStateProps = Readonly<{
   /**
    * Иконката е ПО ИЗБОР нарочно: празният екран без нея си остава верен, а
-   * екраните приемат дизайн системата един по един (`ADM-10` § 2).
+   * екраните приемат дизайн системата един по един.
    */
   icon?: LucideIcon;
   title: string;

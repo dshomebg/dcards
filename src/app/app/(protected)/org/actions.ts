@@ -1,10 +1,10 @@
 'use server';
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
 import { z } from 'zod';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db, env, sendMail } from '@/modules/core';
 import {
   cancelInvitation,
@@ -33,17 +33,6 @@ const failure = (message: string): OrgActionFailure => ({
 
 const INVALID_ID = 'Записът не съществува.';
 const FAILED = 'Промяната не беше записана — опитай пак след малко.';
-
-function logUnexpected(where: string, error: unknown): void {
-  // Drizzle носи параметрите (имейл, хеш) в `message` — само код и constraint (DAT-6).
-  if (error instanceof DrizzleQueryError) {
-    const cause = error.cause as
-      { code?: string; constraint_name?: string } | undefined;
-    console.error(`${where}: db error`, cause?.code, cause?.constraint_name);
-    return;
-  }
-  console.error(`${where}:`, error instanceof Error ? error.name : 'error');
-}
 
 type Limit = (current: Current) => Promise<string | null>;
 type Operation<T> = (current: Current) => Promise<T>;

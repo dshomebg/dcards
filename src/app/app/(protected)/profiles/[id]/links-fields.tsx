@@ -111,9 +111,11 @@ function LinkRow({
 
 interface Props {
   readonly form: UseFormReturn<ProfileFormValues>;
+  /** Таванът на плана; `null` = без таван. */
+  readonly maxLinks?: number | null;
 }
 
-export function LinksFields({ form }: Props) {
+export function LinksFields({ form, maxLinks = null }: Props) {
   const {
     control,
     register,
@@ -126,6 +128,9 @@ export function LinksFields({ form }: Props) {
   // Типът се гледа живо: placeholder-ът на етикета е подразбираният по тип.
   const links = useWatch({ control, name: 'links' });
   const listError = errors.links?.root?.message ?? errors.links?.message;
+  // Pro → Free оставя повече линкове от тавана и всеки запис се отказва —
+  // човекът трябва да види колко да махне, преди да натисне „Запиши".
+  const excess = maxLinks === null ? 0 : fields.length - maxLinks;
 
   return (
     // „Добави линк" е винаги активен — лимитът на плана го казва сървърът.
@@ -150,6 +155,12 @@ export function LinksFields({ form }: Props) {
           />
         ))}
       </ul>
+      {excess > 0 && (
+        <p role="alert" className="text-danger text-sm">
+          Планът ти позволява до {maxLinks} линка. Премахни {excess}, за да
+          запишеш промените.
+        </p>
+      )}
       {listError !== undefined && (
         <p className="text-danger text-xs">{listError}</p>
       )}

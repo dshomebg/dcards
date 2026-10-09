@@ -65,6 +65,12 @@ function Harness({
 const preview = () => screen.getByRole('complementary', { name: 'Превю' });
 
 describe('ProfilePreview', () => {
+  it('names the profile with an h2 — the editor page owns the h1', () => {
+    render(<Harness />);
+    expect(preview().querySelector('h1')).toBeNull();
+    expect(preview().querySelector('h2')?.textContent).toContain('Петров');
+  });
+
   it('shows only visible links and follows typing', () => {
     render(<Harness />);
     const items = preview().querySelectorAll('li');

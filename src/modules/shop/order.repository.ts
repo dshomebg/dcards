@@ -140,15 +140,32 @@ export function findOrdersByOrg(
 }
 
 /** Всички поръчки за админа, най-новите първо; `status` стеснява, `undefined` = всички. */
+const byStatus = (status: OrderStatus | undefined) =>
+  status === undefined ? undefined : eq(orders.status, status);
+
 export function findOrdersForAdmin(
   executor: DbExecutor,
   status: OrderStatus | undefined,
+  window: { readonly limit: number; readonly offset: number },
 ): Promise<Order[]> {
   return executor
     .select()
     .from(orders)
-    .where(status === undefined ? undefined : eq(orders.status, status))
-    .orderBy(desc(orders.createdAt), desc(orders.id));
+    .where(byStatus(status))
+    .orderBy(desc(orders.createdAt), desc(orders.id))
+    .limit(window.limit)
+    .offset(window.offset);
+}
+
+export async function countOrdersForAdmin(
+  executor: DbExecutor,
+  status: OrderStatus | undefined,
+): Promise<number> {
+  const [row] = await executor
+    .select({ total: count() })
+    .from(orders)
+    .where(byStatus(status));
+  return row?.total ?? 0;
 }
 
 export async function findOrderById(

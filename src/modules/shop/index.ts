@@ -66,10 +66,12 @@ export {
   placeOrderInputSchema,
 } from './order.service';
 export {
+  ADMIN_ORDERS_PAGE_SIZE,
   type AdminOrderDto,
   type AdminOrderSummaryDto,
   CARD_EDITABLE_STATUSES,
   countOpenOrders,
+  countOrderPagesForAdmin,
   getOrderForAdmin,
   listOrdersForAdmin,
   lockOrderForCards,

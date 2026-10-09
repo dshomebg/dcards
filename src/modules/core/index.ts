@@ -1,6 +1,3 @@
-import { createLimiter } from './rate-limit/limiter';
-import { redis } from './redis/client';
-
 export { type Db, db, type DbExecutor } from './db/client';
 export {
   isForeignKeyViolation,
@@ -35,6 +32,7 @@ export {
   type RatePolicy,
   tooManyMessage,
 } from './rate-limit/policy';
+export { rateLimit } from './rate-limit/shared';
 export { redis } from './redis/client';
 export {
   createLogoKey,
@@ -47,6 +45,3 @@ export {
   putObject,
   readObject,
 } from './storage';
-
-// Готов лимитер върху общия Redis клиент — потребителите не строят свой.
-export const rateLimit = createLimiter(redis);

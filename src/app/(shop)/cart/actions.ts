@@ -9,6 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db } from '@/modules/core';
 import {
   addLine,
@@ -35,15 +36,6 @@ const failure = (message: string): CartActionFailure => ({
 
 const VARIANT_GONE = 'Този вариант вече не се предлага.';
 const FAILED = 'Количката не беше записана — опитай пак след малко.';
-
-/** Само име и `cause` — Drizzle носи параметрите в `message` (DAT-6). */
-function logUnexpected(where: string, error: unknown): void {
-  const cause = error instanceof Error ? error.cause : undefined;
-  console.error(
-    `${where}: ${error instanceof Error ? error.name : 'error'}`,
-    cause,
-  );
-}
 
 /** „Добави в количката": успех → `/cart`; всичко друго е съобщение. */
 export async function addToCartAction(

@@ -51,7 +51,7 @@ export function ConfirmDialog({
       onClose={onClose}
       className={
         // `whitespace-normal`: отворен от клетка с `nowrap`, диалогът иначе
-        // наследява реда и реже описанието си (`CAT-83`).
+        // наследява реда и реже описанието си.
         'm-auto w-full max-w-md rounded-(--radius-card) border border-border ' +
         'bg-surface p-0 text-left text-text whitespace-normal backdrop:bg-overlay/50'
       }

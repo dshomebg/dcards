@@ -220,10 +220,10 @@ describe('activateFromChipAction', () => {
     });
   });
 
-  it('redirects to /login without a session', async () => {
+  it('sends an expired session to /login with the chip as next', async () => {
     auth.getCurrentUser.mockResolvedValue(null);
     await expect(activateFromChipAction('ABCD2345', PROFILE)).rejects.toThrow(
-      'REDIRECT:/login',
+      `REDIRECT:/login?next=${encodeURIComponent('/c/ABCD2345')}`,
     );
   });
 });

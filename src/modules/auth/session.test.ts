@@ -75,10 +75,9 @@ describe('readSession', () => {
     redis.expire.mockReset().mockResolvedValue(1);
   });
 
-  it('slides both the session key and the user index', async () => {
+  it('does not extend the session — the week from sign-in is a hard cap', async () => {
     await expect(readSession()).resolves.toEqual(user);
-    expect(redis.expire).toHaveBeenCalledWith('session:abc', WEEK);
-    expect(redis.expire).toHaveBeenCalledWith(USER_KEY, WEEK);
+    expect(redis.expire).not.toHaveBeenCalled();
   });
 
   it('returns null when Redis is down', async () => {

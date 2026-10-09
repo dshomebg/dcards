@@ -17,6 +17,8 @@ import type { ProfileFormValues } from './schema';
 export interface EditorPlan {
   readonly customTheme: boolean;
   readonly branding: boolean;
+  /** Таванът на линковете; `null`/липса = без таван. */
+  readonly maxLinks?: number | null;
 }
 
 interface Props {
@@ -101,6 +103,7 @@ export function ProfilePreview({
           appName={appName}
           appUrl={appUrl}
           branding={plan.branding}
+          nested
         />
       </div>
     </aside>

@@ -1,10 +1,10 @@
 'use server';
 
-import { DrizzleQueryError } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { logUnexpected } from '@/lib/log-unexpected';
 import { db } from '@/modules/core';
 import {
   activateCard,
@@ -35,18 +35,6 @@ const NOT_FOUND = 'Няма такава карта.';
 const NO_ACCESS = 'Нямаш достъп до тази организация.';
 const FAILED = 'Промяната не беше записана — опитай пак след малко.';
 
-function logUnexpected(where: string, error: unknown): void {
-  // Drizzle носи параметрите в `message`, а pg `detail` — целия ред (с кода за
-  // активация). Логват се само код и constraint (DAT-6).
-  if (error instanceof DrizzleQueryError) {
-    const cause = error.cause as
-      { code?: string; constraint_name?: string } | undefined;
-    console.error(`${where}: db error`, cause?.code, cause?.constraint_name);
-    return;
-  }
-  console.error(`${where}:`, error);
-}
-
 type Limit = (current: Current) => Promise<string | null>;
 type Operation<T> = (current: Current) => Promise<T>;
 type RunResult<T> =
@@ -57,8 +45,9 @@ async function runCardAction<T>(
   where: string,
   limit: Limit,
   operation: Operation<T>,
+  next?: string,
 ): Promise<RunResult<T>> {
-  const current = await requireCurrent();
+  const current = await requireCurrent(next);
   const limited = await limit(current);
   if (limited !== null) return failure(limited);
 
@@ -167,6 +156,8 @@ export async function activateFromChipAction(
         orgId: org.id,
         profileId: profile.data,
       }),
+    // Изтекла сесия по средата на активирането — след входа обратно към чипа.
+    `/c/${id.data}`,
   );
   if (!result.ok) return result;
   // `redirect` хвърля — стои извън `try`. През `/c/{id}`, не право към профила:

@@ -104,7 +104,7 @@ export function ProfileEditor({ profile, plan, appName, appUrl }: Props) {
             customTheme={plan.customTheme}
             hasLogo={saved.logoKey !== null}
           />
-          <LinksFields form={form} />
+          <LinksFields form={form} maxLinks={plan.maxLinks} />
           <DeleteProfile profileId={saved.id} />
         </form>
 

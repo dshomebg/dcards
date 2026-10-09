@@ -2,10 +2,10 @@
 // на публичната страница.
 
 // Стойностите на `--color-bg` и `--color-ink` от `src/theme/tokens.css`: CSS
-// променливите не се четат при рендер, а контрастът се смята тук. Сменят ли се
-// там, сменят се и тук.
-const LIGHT_INK_HEX = '#f4f6f5';
-const DARK_INK_HEX = '#2f4a54';
+// променливите не се четат при рендер, а контрастът се смята тук. Тестът
+// пада, ако двете места се разминат.
+export const LIGHT_INK_HEX = '#f4f6f5';
+export const DARK_INK_HEX = '#2f4a54';
 
 export type AccentInk = 'light' | 'dark';
 

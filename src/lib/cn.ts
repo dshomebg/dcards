@@ -13,7 +13,7 @@ const twMerge = extendTailwindMerge({
       // `--radius-*` ражда `rounded-control` и `rounded-card`. Без тях
       // `cn('rounded-md', 'rounded-card')` оставяше и двата класа.
       radius: ['control', 'card'],
-      // `--text-*` ражда `text-label` и `text-hint` (`ADM-11` етап 1). Те са
+      // `--text-*` ражда `text-label` и `text-hint`. Те са
       // в същата група като `text-sm`, тоест без записа `cn('text-sm',
       // 'text-label')` оставя двата и размерът зависи от реда в CSS-а.
       text: ['label', 'hint'],

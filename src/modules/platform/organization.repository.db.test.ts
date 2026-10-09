@@ -6,13 +6,15 @@ import { db } from '@/modules/core';
 import { users } from '../auth/user.schema';
 import {
   createPersonalOrganization,
-  getOrganizationForAdmin,
   isOrgMember,
+} from './organization.repository';
+import { organizations, orgMembers } from './organization.schema';
+import {
+  getOrganizationForAdmin,
   listMembershipsForUsers,
   searchOrganizations,
   updateOrganizationPlan,
-} from './organization.repository';
-import { organizations, orgMembers } from './organization.schema';
+} from './organization-admin.repository';
 import { OrganizationError } from './organization-plan';
 import { createProfile } from './profile.service';
 
