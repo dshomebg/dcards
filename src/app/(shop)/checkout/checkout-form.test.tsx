@@ -77,11 +77,10 @@ describe('CheckoutForm', () => {
     expect(placeOrderAction).not.toHaveBeenCalled();
   });
 
-  it('keeps card payment disabled and cod checked', () => {
+  it('offers only cash on delivery, checked', () => {
     renderForm();
-    const card = screen.getByLabelText<HTMLInputElement>(/С карта/);
+    expect(screen.queryByLabelText(/С карта/)).toBeNull();
     const cod = screen.getByLabelText<HTMLInputElement>(/Наложен платеж/);
-    expect(card.disabled).toBe(true);
     expect(cod.checked).toBe(true);
   });
 

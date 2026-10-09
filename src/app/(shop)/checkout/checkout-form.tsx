@@ -135,7 +135,7 @@ function CustomerFields({ register, errors }: FieldsProps) {
   );
 }
 
-/** Картовото плащане е „скоро" — native radio с `disabled`, `RadioGroup` няма такова. */
+/** Картовото плащане отпадна засега (собственикът, 2026-10-09) — не се обещава. */
 function PaymentChoice({ register }: Pick<FieldsProps, 'register'>) {
   return (
     <fieldset className="flex flex-col gap-hint">
@@ -143,15 +143,6 @@ function PaymentChoice({ register }: Pick<FieldsProps, 'register'>) {
       <label className="flex items-center gap-1.5 text-sm font-medium">
         <input type="radio" value="cod" {...register('paymentMethod')} />
         Наложен платеж (при доставка)
-      </label>
-      <label className="text-text-muted flex items-center gap-1.5 text-sm">
-        <input
-          type="radio"
-          value="card"
-          disabled
-          {...register('paymentMethod')}
-        />
-        С карта <span className="text-xs">(скоро)</span>
       </label>
     </fieldset>
   );
