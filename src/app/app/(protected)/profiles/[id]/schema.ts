@@ -42,6 +42,7 @@ export const THEME_OPTIONS: readonly {
   { value: 'light', label: 'Светла' },
   { value: 'dark', label: 'Тъмна' },
   { value: 'sand', label: 'Пясък' },
+  { value: 'petrol', label: 'Петрол' },
 ];
 
 /** `null` → `''`: полетата държат низове; action-ът връща обратно към `null`. */

@@ -157,7 +157,7 @@ export { type DayCount, localDay, SCAN_TIME_ZONE } from './scan-days';
 export { classifyDevice, isBot } from './scan-device';
 export { logScanFailure } from './scan-log';
 export { RESERVED_SLUGS, slugSchema } from './slug';
-export { type AccentInk, accentInk } from './theme-contrast';
+export { type AccentInk, accentInk, accentReadableOn } from './theme-contrast';
 export {
   buildVCard,
   foldLine,

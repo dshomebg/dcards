@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "org_members_one_owner_idx" ON "org_members" USING btree ("org_id") WHERE "org_members"."role" = 'owner';--> statement-breakpoint
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_expiry_only_pro" CHECK ("organizations"."plan" = 'pro' or "organizations"."plan_expires_at" is null);

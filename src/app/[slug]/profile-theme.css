@@ -1,5 +1,5 @@
 /*
- * Трите теми на публичния профил — слой върху палитрата от `tokens.css`, не нова
+ * Четирите теми на публичния профил — слой върху палитрата от `tokens.css`, не нова
  * палитра. Компонентът ползва само `--profile-*`; brass остава за икони/бордюри.
  */
 
@@ -28,6 +28,16 @@
   --profile-accent: var(--color-brand);
   --profile-accent-ink: var(--color-brand-contrast);
   --profile-surface: var(--color-surface);
+}
+
+/* Измерено (WCAG): текст 5.0:1, вторичен 4.6:1, върху повърхност 8.7 и 7.9:1. */
+[data-profile-theme='petrol'] {
+  --profile-bg: var(--color-brand);
+  --profile-ink: var(--color-bg);
+  --profile-muted: var(--color-brand-subtle);
+  --profile-accent: var(--color-bg);
+  --profile-accent-ink: var(--color-brand);
+  --profile-surface: var(--color-ink);
 }
 
 /* Фонът покрива целия екран — иначе при скрол се показва белият body. */

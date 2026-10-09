@@ -2,7 +2,10 @@
 
 // Единственият клиентски компонент на `/[slug]`: Web Share → clipboard → адресът като текст.
 
+import { Share2 } from 'lucide-react';
 import { useState } from 'react';
+
+import { ACTION_CLASS } from './action-class';
 
 const COPIED_MS = 2000;
 
@@ -38,8 +41,9 @@ export function ShareButton({ url, title }: Props) {
       <button
         type="button"
         onClick={() => void share()}
-        className="rounded-(--radius-card) bg-(--profile-surface) px-4 py-3 font-medium text-(--profile-ink) shadow-(--shadow-card)"
+        className={`${ACTION_CLASS} bg-(--profile-surface) text-(--profile-ink)`}
       >
+        <Share2 aria-hidden size={20} strokeWidth={1.75} />
         {state === 'copied' ? 'Копирано' : 'Сподели'}
       </button>
       {state === 'plain' && (

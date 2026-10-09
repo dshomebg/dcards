@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Чисти качени файлове, към които нищо не сочи: лого, качено в количката, но
-# непоръчано; стара снимка на профил, чието изтриване се е провалило.
+# непоръчано; стара снимка на профил или продукт, чието изтриване се е провалило.
 # По подразбиране САМО ИЗБРОЯВА; трие с `--delete`. Седмично от root crontab:
 #   30 4 * * 0 /opt/dcards/cleanup-uploads.sh --delete >> /var/log/dcards-cleanup.log 2>&1
 # ⚠ Нова колона с ключ на файл влиза в заявката по-долу — иначе файловете ѝ са „сираци".
@@ -49,7 +49,9 @@ docker exec "${SLUG}-postgres-prod" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
     select photo_key from profiles where photo_key is not null
     union select logo_key from profiles where logo_key is not null
     union select personalization->>'logoKey' from order_items
-      where personalization->>'logoKey' is not null" \
+      where personalization->>'logoKey' is not null
+    union select jsonb_array_elements_text(images) from products
+      where jsonb_typeof(images) = 'array'" \
   > "$REFERENCED" || fail "cannot read referenced keys"
 log "referenced keys in database: $(wc -l < "$REFERENCED")"
 
@@ -62,8 +64,8 @@ while IFS= read -r -d '' file; do
     printf '%s\0' "$key" >> "$ORPHANS"
     log "  orphan $key"
   fi
-done < <(find "$UPLOADS/logos" "$UPLOADS/photos" -type f -name '*.webp' \
-  -mtime +"$MIN_AGE_DAYS" -print0 2>/dev/null || true)
+done < <(find "$UPLOADS/logos" "$UPLOADS/photos" "$UPLOADS/products" \
+  -type f -name '*.webp' -mtime +"$MIN_AGE_DAYS" -print0 2>/dev/null || true)
 
 orphans=$(tr -cd '\0' < "$ORPHANS" | wc -c)
 log "old files kept: $kept, orphans: $orphans"

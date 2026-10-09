@@ -1,17 +1,21 @@
 // Чист презентационен компонент на публичния профил — без база, без Next API,
 // за да се тества с `renderToStaticMarkup`. Цветовете идват само от `--profile-*`.
 
+import { QrCode, UserPlus } from 'lucide-react';
 import type { CSSProperties } from 'react';
 
 import { uploadUrl } from '@/lib/upload-url';
 import {
   accentInk,
+  accentReadableOn,
   LINK_LABELS,
   linkHref,
   profileUrl,
   type PublicProfile,
 } from '@/modules/platform';
 
+import { ACTION_CLASS } from './action-class';
+import { LinkIcon } from './link-icon';
 import { ShareButton } from './share-button';
 
 interface ProfileViewProps {
@@ -27,6 +31,7 @@ interface ProfileViewProps {
 type ThemeStyle = CSSProperties & {
   '--profile-accent'?: string;
   '--profile-accent-ink'?: string;
+  '--profile-accent-text'?: string;
   '--profile-logo'?: string;
 };
 
@@ -40,15 +45,16 @@ function themeStyle(profile: PublicProfile): ThemeStyle | undefined {
   if (primaryColor !== null) {
     style['--profile-accent'] = primaryColor;
     style['--profile-accent-ink'] = ACCENT_INK_VAR[accentInk(primaryColor)];
+    // Цвят, който се губи на фона на темата, не става цвят на текста (фирмата).
+    if (!accentReadableOn(profile.theme.preset, primaryColor)) {
+      style['--profile-accent-text'] = 'var(--profile-ink)';
+    }
   }
   if (logoBackground && profile.logoKey !== null) {
     style['--profile-logo'] = `url("${uploadUrl(profile.logoKey)}")`;
   }
   return Object.keys(style).length === 0 ? undefined : style;
 }
-
-const ACTION_CLASS =
-  'rounded-(--radius-card) px-4 py-3 text-center font-medium shadow-(--shadow-card)';
 
 function initials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -93,12 +99,13 @@ function LinkRow({ link }: { readonly link: PublicProfile['links'][number] }) {
       <a
         href={href}
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-        className="flex items-center justify-between rounded-(--radius-card) bg-(--profile-surface) px-4 py-3 text-(--profile-ink) shadow-(--shadow-card)"
+        className="flex min-h-14 items-center gap-3 rounded-(--radius-card) bg-(--profile-surface) px-4 py-3 text-(--profile-ink) shadow-(--shadow-card)"
       >
-        <span className="font-medium">
+        <LinkIcon type={link.type} />
+        <span className="shrink-0 font-medium">
           {link.label ?? LINK_LABELS[link.type]}
         </span>
-        <span className="truncate pl-4 text-sm text-(--profile-muted)">
+        <span className="ml-auto truncate pl-2 text-sm text-(--profile-muted)">
           {link.value}
         </span>
       </a>
@@ -124,6 +131,7 @@ function Actions({
           download
           className={`${ACTION_CLASS} bg-(--profile-accent) text-(--profile-accent-ink)`}
         >
+          <UserPlus aria-hidden size={20} strokeWidth={1.75} />
           Запази контакт
         </a>
         <ShareButton url={url} title={fullName} />
@@ -131,9 +139,10 @@ function Actions({
             извън grid-а и се показва с `:has(details[open])`, пак без JS. */}
         <details>
           <summary
-            className={`${ACTION_CLASS} block cursor-pointer list-none bg-(--profile-surface) text-(--profile-ink)`}
+            className={`${ACTION_CLASS} cursor-pointer list-none bg-(--profile-surface) text-(--profile-ink)`}
           >
-            QR
+            <QrCode aria-hidden size={20} strokeWidth={1.75} />
+            QR код
           </summary>
         </details>
       </div>
@@ -194,7 +203,7 @@ export function ProfileView({
             <p className="text-(--profile-muted)">{profile.title}</p>
           )}
           {profile.company !== null && (
-            <p className="font-medium text-(--profile-accent)">
+            <p className="font-medium text-(--profile-accent-text,var(--profile-accent))">
               {profile.company}
             </p>
           )}

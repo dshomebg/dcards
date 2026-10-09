@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { deleteFilesQuietly } from '@/lib/delete-files';
 import { logUnexpected } from '@/lib/log-unexpected';
 import { db } from '@/modules/core';
 import {
@@ -16,7 +17,6 @@ import {
 
 import { requireCurrent } from '../../current';
 import { userActionLimit } from '../../rate-limit';
-import { deleteQuietly } from './image-actions';
 import { profileFormSchema, type ProfileFormValues } from './schema';
 
 export interface ActionFailure {
@@ -116,8 +116,7 @@ export async function deleteProfileAction(
     }
     const keys = await deleteProfile(db, org.id, id.data);
     // Снимката е лице — не бива да остава на диска без ред, който да я сочи.
-    await deleteQuietly(keys.photoKey);
-    await deleteQuietly(keys.logoKey);
+    await deleteFilesQuietly([keys.photoKey, keys.logoKey]);
   } catch (error) {
     if (error instanceof ProfileError) return failure(error.message);
     logUnexpected('deleteProfileAction', error);

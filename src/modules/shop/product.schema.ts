@@ -50,7 +50,8 @@ export const products = pgTable(
     material: productMaterialEnum('material').notNull(),
     basePrice: integer('base_price').notNull(),
     isActive: boolean('is_active').notNull().default(true),
-    // Storage още няма — засега винаги `[]`; четенето минава през `safeParse`.
+    // Ключове `products/<uuid>.webp`, основната е първата (SHP-5); четенето
+    // минава през `readProductImages` — лош елемент се пропуска (DAT-7).
     images: jsonb('images').$type<readonly string[]>().notNull().default([]),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -98,6 +99,8 @@ export interface PublicProductSummary {
   readonly name: string;
   readonly material: ProductMaterial;
   readonly basePrice: number;
+  /** Основната снимка — ключ за `uploadUrl`; `null` = без снимка. */
+  readonly imageKey: string | null;
 }
 
 /** `id` е публичен: количката го праща обратно, цената се смята на сървъра (MON-1). */
@@ -114,5 +117,7 @@ export interface PublicProduct {
   readonly description: string | null;
   readonly material: ProductMaterial;
   readonly basePrice: number;
+  /** В реда от админа; първата е основната. */
+  readonly images: readonly string[];
   readonly variants: readonly PublicProductVariant[];
 }

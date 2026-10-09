@@ -5,9 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   accentInk,
+  accentReadableOn,
   contrastRatio,
   DARK_INK_HEX,
   LIGHT_INK_HEX,
+  PRESET_BG_HEX,
   relativeLuminance,
 } from './theme-contrast';
 
@@ -19,9 +21,17 @@ const token = (name: string) =>
   new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(tokens)?.[1];
 
 describe('theme-contrast', () => {
-  it('uses the same inks as the design tokens', () => {
+  it('uses the same inks and theme backgrounds as the design tokens', () => {
     expect(token('color-bg')?.toLowerCase()).toBe(LIGHT_INK_HEX);
     expect(token('color-ink')?.toLowerCase()).toBe(DARK_INK_HEX);
+    expect(token('color-sand')?.toLowerCase()).toBe(PRESET_BG_HEX.sand);
+    expect(token('color-brand')?.toLowerCase()).toBe(PRESET_BG_HEX.petrol);
+  });
+
+  it('flags a Pro colour that vanishes on the theme background', () => {
+    expect(accentReadableOn('petrol', '#4a6a76')).toBe(false);
+    expect(accentReadableOn('light', '#4a6a76')).toBe(true);
+    expect(accentReadableOn('dark', '#2f4a54')).toBe(false);
   });
 
   it('computes WCAG luminance and ratio for the reference pairs', () => {

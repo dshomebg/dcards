@@ -15,12 +15,14 @@ const rateLimit = vi.hoisted(() => ({
   consume: vi.fn(() => Promise.resolve({ allowed: true, retryAfterSec: 0 })),
 }));
 const cache = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
+const storage = vi.hoisted(() => ({ deleteObject: vi.fn() }));
 
 // Barrel-ът на `auth` носи `server-only`; `core` отваря пул при импорт.
 vi.mock('@/modules/auth', () => auth);
 vi.mock('@/modules/core', async () => ({
   db: { transaction: (fn: (tx: object) => unknown) => fn({}) },
   rateLimit,
+  ...storage,
   ...(await vi.importActual('@/modules/core/rate-limit/policy')),
 }));
 vi.mock('@/modules/shop', async (importOriginal) => ({
@@ -37,6 +39,9 @@ vi.mock('next/navigation', () => ({
 const { ProductError } = await import('@/modules/shop');
 const { createProductAction, deleteProductAction, saveProductAction } =
   await import('./actions');
+
+const IMAGE_A = 'products/00000000-0000-4000-8000-00000000000a.webp';
+const IMAGE_B = 'products/00000000-0000-4000-8000-00000000000b.webp';
 
 const admin = {
   id: '019969a0-0000-7000-8000-000000000001',
@@ -106,7 +111,8 @@ beforeEach(() => {
   shop.createProduct.mockReset().mockResolvedValue({ id: PRODUCT_ID });
   shop.updateProduct.mockReset().mockResolvedValue(updated);
   shop.replaceVariants.mockReset().mockResolvedValue(savedVariants);
-  shop.deleteProduct.mockReset().mockResolvedValue(undefined);
+  shop.deleteProduct.mockReset().mockResolvedValue([]);
+  storage.deleteObject.mockReset().mockResolvedValue(undefined);
   rateLimit.consume.mockClear();
   rateLimit.consume.mockResolvedValue({ allowed: true, retryAfterSec: 0 });
   cache.revalidatePath.mockClear();
@@ -274,5 +280,23 @@ describe('deleteProductAction', () => {
       PRODUCT_ID,
     );
     expect(cache.revalidatePath).toHaveBeenCalledWith('/admin/products');
+  });
+
+  it('deletes the image files after the row, a failed unlink only logs', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    shop.deleteProduct.mockResolvedValue([IMAGE_A, IMAGE_B]);
+    storage.deleteObject.mockRejectedValueOnce(new Error('EACCES'));
+    await expect(deleteProductAction(PRODUCT_ID)).rejects.toThrow(
+      'REDIRECT:/admin/products',
+    );
+    expect(storage.deleteObject).toHaveBeenCalledWith(IMAGE_A);
+    expect(storage.deleteObject).toHaveBeenCalledWith(IMAGE_B);
+    error.mockRestore();
+  });
+
+  it('keeps the files when the product has orders', async () => {
+    shop.deleteProduct.mockRejectedValue(new ProductError('has_orders'));
+    expect((await deleteProductAction(PRODUCT_ID)).ok).toBe(false);
+    expect(storage.deleteObject).not.toHaveBeenCalled();
   });
 });

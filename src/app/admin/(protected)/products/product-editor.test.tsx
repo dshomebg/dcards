@@ -10,6 +10,12 @@ const actions = vi.hoisted(() => ({
 }));
 
 vi.mock('./actions', () => actions);
+// Блокът „Снимки" има свои action-и (и свой тест) — тук само да не внася `core`.
+vi.mock('./image-actions', () => ({
+  uploadProductImageAction: vi.fn(),
+  removeProductImageAction: vi.fn(),
+  reorderProductImagesAction: vi.fn(),
+}));
 
 const { ProductEditor } = await import('./product-editor');
 
@@ -33,6 +39,7 @@ describe('ProductEditor', () => {
       'Цена и материал',
       'Видимост',
       'Варианти',
+      'Снимки',
     ]) {
       expect(screen.getByRole('heading', { name: title })).toBeTruthy();
     }

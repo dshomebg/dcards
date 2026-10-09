@@ -9,5 +9,7 @@ export {
   processLogo,
   type ProcessOptions,
   processPhoto,
+  processProductImage,
+  PRODUCT_IMAGE_MAX_SIDE,
   toJpeg,
 } from './process';

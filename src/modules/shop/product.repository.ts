@@ -212,16 +212,28 @@ export async function deleteVariantsByIds(
     );
 }
 
-/** `false` = няма такъв продукт. Вариантите падат по cascade. */
+/** Само под `lockProduct` в същата транзакция — иначе паралелни записи се губят. */
+export async function updateProductImages(
+  executor: DbExecutor,
+  id: string,
+  images: readonly string[],
+): Promise<void> {
+  await executor
+    .update(products)
+    .set({ images: [...images] })
+    .where(eq(products.id, id));
+}
+
+/** `null` = няма такъв продукт; иначе `images` на изтрития ред. Вариантите падат по cascade. */
 export async function deleteProductById(
   executor: DbExecutor,
   id: string,
-): Promise<boolean> {
+): Promise<Product['images'] | null> {
   const rows = await executor
     .delete(products)
     .where(eq(products.id, id))
-    .returning({ id: products.id });
-  return rows.length > 0;
+    .returning({ images: products.images });
+  return rows[0]?.images ?? null;
 }
 
 export async function countActiveProducts(

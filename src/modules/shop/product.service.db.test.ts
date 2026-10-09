@@ -220,6 +220,7 @@ describe('listProductsForAdmin / public reads', () => {
       name: 'PVC Classic',
       material: 'pvc',
       basePrice: 1990,
+      imageKey: null,
     });
 
     expect(await getActiveProductBySlug(db, 'pub-hidden')).toBeNull();

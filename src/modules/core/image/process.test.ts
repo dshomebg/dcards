@@ -7,6 +7,7 @@ import {
   processImage,
   processLogo,
   processPhoto,
+  processProductImage,
   toJpeg,
 } from './process';
 
@@ -59,6 +60,23 @@ describe('processPhoto', () => {
     const meta = await sharp(out).metadata();
     expect(meta.width).toBe(200);
     expect(meta.height).toBe(200);
+  });
+});
+
+describe('processProductImage', () => {
+  it('keeps the proportion with the long side at 1200, no crop', async () => {
+    const out = await processProductImage(await image(2400, 1600, 'png'));
+    const meta = await sharp(out).metadata();
+    expect(meta.format).toBe('webp');
+    expect(meta.width).toBe(1200);
+    expect(meta.height).toBe(800);
+  });
+
+  it('does not enlarge a small JPEG', async () => {
+    const out = await processProductImage(await image(300, 500, 'jpeg'));
+    const meta = await sharp(out).metadata();
+    expect(meta.width).toBe(300);
+    expect(meta.height).toBe(500);
   });
 });
 

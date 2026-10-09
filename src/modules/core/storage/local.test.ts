@@ -38,12 +38,20 @@ describe('storage keys', () => {
     expect(isObjectKey(key)).toBe(true);
   });
 
+  it('generates a product image key under its own folder', () => {
+    const key = createObjectKey('products');
+    expect(key).toMatch(/^products\/[0-9a-f-]{36}\.webp$/);
+    expect(isObjectKey(key)).toBe(true);
+  });
+
   it('refuses traversal, other prefixes and other extensions', () => {
     for (const bad of [
       '../x',
       'logos/../../etc/passwd',
       'logos/x.webp',
       'photos/../x',
+      'products/../x',
+      'products/x.webp',
       'avatars/00000000-0000-0000-0000-000000000000.webp',
       'logos/00000000-0000-0000-0000-000000000000.png',
       'logos/00000000-0000-0000-0000-000000000000.webp/../x',

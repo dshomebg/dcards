@@ -1,10 +1,15 @@
 import { clientIpFrom, RATE_POLICY, rateKey, rateLimit } from '@/modules/core';
 
-/** Общ IP bucket за публичните handlers; `429` с `Retry-After` или `null`. */
-export async function publicApiLimit(req: Request): Promise<Response | null> {
-  const { limit, windowSec } = RATE_POLICY.apiIp;
+type Bucket = 'apiIp' | 'uploadsIp';
+
+/** IP bucket за публичните handlers; `429` с `Retry-After` или `null`. */
+export async function publicApiLimit(
+  req: Request,
+  bucket: Bucket = 'apiIp',
+): Promise<Response | null> {
+  const { limit, windowSec } = RATE_POLICY[bucket];
   const result = await rateLimit.consume(
-    rateKey.apiIp(clientIpFrom(req.headers)),
+    rateKey[bucket](clientIpFrom(req.headers)),
     limit,
     windowSec,
   );

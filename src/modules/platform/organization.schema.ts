@@ -3,6 +3,7 @@
 
 import { sql } from 'drizzle-orm';
 import {
+  check,
   index,
   pgEnum,
   pgTable,
@@ -29,22 +30,32 @@ export const organizationPlanEnum = pgEnum('organization_plan', [
 
 export const orgMemberRoleEnum = pgEnum('org_member_role', ['owner', 'editor']);
 
-export const organizations = pgTable('organizations', {
-  id: primaryId(),
-  type: organizationTypeEnum('type').notNull(),
-  name: text('name').notNull(),
-  plan: organizationPlanEnum('plan').notNull().default('free'),
-  planExpiresAt: timestamp('plan_expires_at', {
-    withTimezone: true,
-    mode: 'date',
-  }),
-  // Организация без собственик е невалидна — потребителят не се трие, докато
-  // притежава такава.
-  ownerUserId: uuid('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'restrict' }),
-  createdAt: createdAt(),
-});
+export const organizations = pgTable(
+  'organizations',
+  {
+    id: primaryId(),
+    type: organizationTypeEnum('type').notNull(),
+    name: text('name').notNull(),
+    plan: organizationPlanEnum('plan').notNull().default('free'),
+    planExpiresAt: timestamp('plan_expires_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    // Организация без собственик е невалидна — потребителят не се трие, докато
+    // притежава такава.
+    ownerUserId: uuid('owner_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+  },
+  // Дата на изтичане има само Pro — инвариантът е и в базата, не само в кода.
+  (table) => [
+    check(
+      'organizations_expiry_only_pro',
+      sql`${table.plan} = 'pro' or ${table.planExpiresAt} is null`,
+    ),
+  ],
+);
 
 export type Organization = typeof organizations.$inferSelect;
 export type NewOrganization = typeof organizations.$inferInsert;
@@ -64,6 +75,10 @@ export const orgMembers = pgTable(
   (table) => [
     primaryKey({ columns: [table.orgId, table.userId] }),
     index('org_members_user_idx').on(table.userId),
+    // Най-много един собственик на организация — и при паралелни записи.
+    uniqueIndex('org_members_one_owner_idx')
+      .on(table.orgId)
+      .where(sql`${table.role} = 'owner'`),
   ],
 );
 

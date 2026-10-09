@@ -17,8 +17,8 @@ const rateLimit = vi.hoisted(() => ({
 
 // Barrel-ът на `auth` носи `server-only`; `core` отваря пул при импорт.
 vi.mock('@/modules/auth', () => auth);
-const images = vi.hoisted(() => ({ deleteQuietly: vi.fn() }));
-vi.mock('./image-actions', () => images);
+const files = vi.hoisted(() => ({ deleteFilesQuietly: vi.fn() }));
+vi.mock('@/lib/delete-files', () => files);
 vi.mock('@/modules/core', async () => ({
   db: { transaction: (fn: (tx: object) => unknown) => fn({}) },
   rateLimit,
@@ -253,7 +253,9 @@ describe('deleteProfileAction', () => {
       profileId,
     );
     // Файлът със снимката пада заедно с реда — лице не остава на диска.
-    expect(images.deleteQuietly).toHaveBeenCalledWith('photos/a.webp');
-    expect(images.deleteQuietly).toHaveBeenCalledWith(null);
+    expect(files.deleteFilesQuietly).toHaveBeenCalledWith([
+      'photos/a.webp',
+      null,
+    ]);
   });
 });

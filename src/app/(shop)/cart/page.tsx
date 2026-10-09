@@ -44,21 +44,32 @@ function LineRow({
   const { personalization } = line;
   return (
     <li className="flex flex-col gap-hint rounded-(--radius-card) border border-border bg-surface p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="font-semibold">
-          {line.productSlug === '' ? (
-            line.productName
-          ) : (
-            <Link href={`/products/${line.productSlug}`}>
-              {line.productName}
-            </Link>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-field font-semibold">
+          {line.imageKey !== null && (
+            <img
+              src={uploadUrl(line.imageKey)}
+              alt={line.productName}
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-(--radius-control) border border-border object-contain"
+            />
           )}
-          {line.variantName !== '' && (
-            <span className="text-text-muted font-normal">
-              {' '}
-              · {line.variantName}
-            </span>
-          )}
+          <span>
+            {line.productSlug === '' ? (
+              line.productName
+            ) : (
+              <Link href={`/products/${line.productSlug}`}>
+                {line.productName}
+              </Link>
+            )}
+            {line.variantName !== '' && (
+              <span className="text-text-muted font-normal">
+                {' '}
+                · {line.variantName}
+              </span>
+            )}
+          </span>
         </span>
         {line.available ? (
           <span className="text-sm">

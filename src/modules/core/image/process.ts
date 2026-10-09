@@ -9,6 +9,7 @@ export const IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 export const LOGO_MAX_BYTES = IMAGE_MAX_BYTES;
 export const LOGO_MAX_SIDE = 256;
 export const PHOTO_SIDE = 512;
+export const PRODUCT_IMAGE_MAX_SIDE = 1200;
 
 const ACCEPTED_FORMATS = new Set(['png', 'jpeg', 'webp']);
 
@@ -88,6 +89,14 @@ export function processLogo(input: Buffer): Promise<Buffer> {
 
 export function processPhoto(input: Buffer): Promise<Buffer> {
   return processImage(input, { maxSide: PHOTO_SIDE, fit: 'cover' });
+}
+
+/** Снимка на продукт: без изрязване — витрината я вписва в квадрат (SHP-5 § 7). */
+export function processProductImage(input: Buffer): Promise<Buffer> {
+  return processImage(input, {
+    maxSide: PRODUCT_IMAGE_MAX_SIDE,
+    fit: 'inside',
+  });
 }
 
 /** WebP от тома → JPEG за vCard `PHOTO` (§ 7б: в паметта, при всяка заявка). */

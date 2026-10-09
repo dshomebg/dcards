@@ -16,6 +16,7 @@ export function testProduct(
     basePrice: 1990,
     isActive: true,
     updatedAt: new Date('2026-09-20T00:00:00Z'),
+    images: [],
     variants: [
       {
         id: '019969a0-0000-7000-8000-0000000000b1',

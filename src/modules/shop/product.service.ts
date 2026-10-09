@@ -22,6 +22,11 @@ import {
   type PublicProduct,
   type PublicProductSummary,
 } from './product.schema';
+import {
+  MAX_PRODUCT_IMAGES,
+  primaryImage,
+  readProductImages,
+} from './product-images';
 
 export type ProductErrorCode =
   | 'input_invalid'
@@ -32,7 +37,10 @@ export type ProductErrorCode =
   | 'price_negative'
   | 'variant_foreign'
   | 'product_not_found'
-  | 'has_orders';
+  | 'has_orders'
+  | 'images_full'
+  | 'image_foreign'
+  | 'image_order_invalid';
 
 const MESSAGES: Readonly<Record<ProductErrorCode, string>> = {
   input_invalid: 'Има невалидни или твърде дълги полета в продукта.',
@@ -46,6 +54,10 @@ const MESSAGES: Readonly<Record<ProductErrorCode, string>> = {
   product_not_found: 'Продуктът не съществува.',
   has_orders:
     'Има поръчки с този продукт/вариант — маркирай го неактивен вместо да го изтриваш.',
+  images_full: `Продуктът може да има до ${MAX_PRODUCT_IMAGES} снимки.`,
+  image_foreign: 'Снимката не принадлежи на този продукт.',
+  image_order_invalid:
+    'Подредбата не съвпада със снимките на продукта — презареди страницата.',
 };
 
 /** `code` е за тестовете и редактора; `message` е за човека. */
@@ -223,6 +235,7 @@ export async function listActiveProducts(
     name: product.name,
     material: product.material,
     basePrice: product.basePrice,
+    imageKey: primaryImage(product.images),
   }));
 }
 
@@ -241,6 +254,7 @@ export async function getActiveProductBySlug(
     description: product.description,
     material: product.material,
     basePrice: product.basePrice,
+    images: readProductImages(product.images),
     variants: variants.map((variant) => ({
       id: variant.id,
       name: variant.name,

@@ -43,6 +43,26 @@ const html = (p: PublicProfile, branding = true) =>
 
 const LOGO = 'logos/00000000-0000-4000-8000-000000000001.webp';
 
+describe('ProfileView — Pro colour', () => {
+  it('keeps the company readable when the Pro colour vanishes on the theme', () => {
+    const themed = (preset: PublicProfile['theme']['preset']) =>
+      html(
+        profile({
+          theme: {
+            preset,
+            primaryColor: '#4a6a76',
+            logoBackground: false,
+            layout: 'default',
+          },
+        }),
+      );
+    expect(themed('petrol')).toContain(
+      '--profile-accent-text:var(--profile-ink)',
+    );
+    expect(themed('light')).not.toContain('--profile-accent-text:');
+  });
+});
+
 describe('ProfileView', () => {
   it('sets the theme attribute and shows the texts', () => {
     const out = html(profile());
@@ -92,7 +112,7 @@ describe('ProfileView', () => {
 
   it('renders the logo above the header on a surface pad, in every theme', () => {
     const key = 'logos/00000000-0000-4000-8000-000000000001.webp';
-    for (const preset of ['light', 'dark', 'sand'] as const) {
+    for (const preset of ['light', 'dark', 'sand', 'petrol'] as const) {
       const out = html(
         profile({
           logoKey: key,

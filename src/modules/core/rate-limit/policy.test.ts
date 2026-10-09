@@ -92,6 +92,16 @@ describe('image upload policy', () => {
   });
 });
 
+describe('admin image upload policy', () => {
+  it('keys the product image upload per admin at 60 an hour', () => {
+    expect(rateKey.adminImageUpload('a1')).toBe('rl:image-upload:admin:a1');
+    expect(RATE_POLICY.adminImageUpload).toEqual({
+      limit: 60,
+      windowSec: 3600,
+    });
+  });
+});
+
 describe('invite policy', () => {
   it('keys the invitations per org at 10 an hour and the token page per IP', () => {
     expect(rateKey.inviteOrg('o1')).toBe('rl:invite:org:o1');

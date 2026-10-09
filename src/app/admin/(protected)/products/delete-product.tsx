@@ -29,7 +29,7 @@ export function DeleteProduct({ productId }: Props) {
   return (
     <FormSection
       title="Опасна зона"
-      description="Изтриването маха продукта и вариантите му. Не може да се върне."
+      description="Изтриването маха продукта, вариантите и снимките му. Не може да се върне."
     >
       <div>
         <Button variant="danger" onClick={() => setOpen(true)}>
@@ -40,7 +40,7 @@ export function DeleteProduct({ productId }: Props) {
       <ConfirmDialog
         open={open}
         title="Да изтрия ли продукта?"
-        description="Продуктът и вариантите му изчезват от витрината и от списъка."
+        description="Продуктът, вариантите и снимките му изчезват от витрината и от списъка."
         confirmLabel="Изтрий"
         pending={pending}
         error={error}

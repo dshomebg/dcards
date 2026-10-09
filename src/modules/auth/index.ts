@@ -1,4 +1,5 @@
 // Barrel на модула `auth` (ARC-2). Навън излиза само каквото е изброено тук.
+// `createUser` НЕ излиза: приема `isAdmin` — само регистрацията и seed-ът го викат отвътре.
 
 export {
   type AccountMail,
@@ -35,7 +36,6 @@ export { type PublicUser } from './user.schema';
 export {
   changePassword,
   type ChangePasswordResult,
-  createUser,
   findUserByEmail,
   findUserById,
   verifyEmailByToken,

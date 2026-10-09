@@ -64,6 +64,13 @@
       "when": 1789918016660,
       "tag": "0008_org_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791576908885,
+      "tag": "0009_org_invariants",
+      "breakpoints": true
     }
   ]
 }

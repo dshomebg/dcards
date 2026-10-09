@@ -71,7 +71,7 @@ describe('getProductForEdit', () => {
       ['Бяла', 0, 'edit-one-B'],
       ['Черна', 1, null],
     ]);
-    expect(dto).not.toHaveProperty('images');
+    expect(dto?.images).toEqual([]);
     expect(await getProductForEdit(db, MISSING)).toBeNull();
   });
 });

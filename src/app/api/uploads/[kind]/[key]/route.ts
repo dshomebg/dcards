@@ -1,4 +1,4 @@
-// `GET /api/uploads/{logos|photos}/{uuid}.webp` → файлът от тома. Ключът е
+// `GET /api/uploads/{logos|photos|products}/{uuid}.webp` → файлът от тома. Ключът е
 // uuid, без листване; съдържанието под ключ не се мени → година кеш, `immutable`.
 
 import { isObjectKey, readObject } from '@/modules/core';
@@ -21,7 +21,7 @@ export async function GET(req: Request, ctx: Context): Promise<Response> {
   const objectKey = `${kind}/${key}`;
   if (!isObjectKey(objectKey)) return notFound();
   // Лимитът е след валидацията (404 без Redis) и преди диска.
-  const limited = await publicApiLimit(req);
+  const limited = await publicApiLimit(req, 'uploadsIp');
   if (limited !== null) return limited;
   const data = await readObject(objectKey);
   if (data === null) return notFound();

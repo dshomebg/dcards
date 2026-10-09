@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { deleteFilesQuietly } from '@/lib/delete-files';
 import { logUnexpected } from '@/lib/log-unexpected';
 import { db, tooManyMessage } from '@/modules/core';
 import {
@@ -127,7 +128,7 @@ export async function saveProductAction(
   }
 }
 
-/** При успех пренасочва към списъка; вариантите падат по cascade. */
+/** При успех пренасочва към списъка; вариантите падат по cascade, снимките — след реда. */
 export async function deleteProductAction(
   productId: unknown,
 ): Promise<ActionFailure> {
@@ -137,7 +138,7 @@ export async function deleteProductAction(
   if (limited !== null) return limited;
 
   try {
-    await deleteProduct(db, id.data);
+    await deleteFilesQuietly(await deleteProduct(db, id.data));
   } catch (error) {
     if (error instanceof ProductError) return failure(error.message);
     logUnexpected('deleteProductAction', error);

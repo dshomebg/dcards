@@ -16,6 +16,8 @@ export {
   processLogo,
   type ProcessOptions,
   processPhoto,
+  processProductImage,
+  PRODUCT_IMAGE_MAX_SIDE,
   toJpeg,
 } from './image';
 export { type MailMessage, sendMail } from './mail/send';

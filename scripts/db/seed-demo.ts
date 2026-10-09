@@ -17,9 +17,10 @@ import { db } from '@/modules/core';
 import {
   createProfile,
   findPersonalOrganizationByOwner,
-  findPublicProfileBySlug,
   ProfileError,
 } from '@/modules/platform';
+// Дълбок импорт: публичното търсене не вижда скрит `/demo` и Free лимитът лъже.
+import { slugExists } from '@/modules/platform/profile.repository';
 
 const DEMO_SLUG = 'demo';
 
@@ -46,7 +47,7 @@ async function seedDemo(email: string): Promise<'created' | 'exists'> {
   const org = await findPersonalOrganizationByOwner(db, user.id);
   if (org === null) throw new Error(`no personal organization for ${email}`);
   // Идемпотентност по slug; зает от друга организация → `slug_taken` по-долу.
-  if ((await findPublicProfileBySlug(db, DEMO_SLUG)) !== null) return 'exists';
+  if (await slugExists(db, DEMO_SLUG)) return 'exists';
 
   try {
     await createProfile(db, {

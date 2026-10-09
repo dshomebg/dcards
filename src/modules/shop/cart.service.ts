@@ -8,6 +8,7 @@ import {
   findVariantsWithProductByIds,
   type VariantWithProduct,
 } from './product.repository';
+import { primaryImage } from './product-images';
 
 export type CartLineUnavailableReason = 'out_of_stock' | 'unavailable';
 
@@ -17,6 +18,8 @@ export interface CartViewLine {
   readonly variantId: string;
   readonly productSlug: string;
   readonly productName: string;
+  /** Основната снимка на продукта; `null` = без снимка. */
+  readonly imageKey: string | null;
   readonly variantName: string;
   readonly unitPrice: number;
   readonly quantity: number;
@@ -45,6 +48,7 @@ function unavailableLine(
     variantId: line.variantId,
     productSlug: row?.product.slug ?? '',
     productName: row?.product.name ?? 'Продуктът не се предлага',
+    imageKey: row === undefined ? null : primaryImage(row.product.images),
     variantName: row?.variant.name ?? '',
     unitPrice: 0,
     quantity: line.quantity,
@@ -68,6 +72,7 @@ function viewLine(
     variantId: line.variantId,
     productSlug: row.product.slug,
     productName: row.product.name,
+    imageKey: primaryImage(row.product.images),
     variantName: row.variant.name,
     unitPrice,
     quantity: line.quantity,

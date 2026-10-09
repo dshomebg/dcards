@@ -4,12 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { FormActions, FormLayout } from '@/components/form';
+import { FormActions, FormLayout, FormSection } from '@/components/form';
 import type { ProductEditDto } from '@/modules/shop';
 
 import { createProductAction, saveProductAction } from './actions';
 import { DeleteProduct } from './delete-product';
 import { ProductFields } from './product-fields';
+import { ProductImages } from './product-images';
 import {
   EMPTY_PRODUCT,
   type ProductFormOutput,
@@ -96,6 +97,15 @@ export function ProductEditor(props: Props) {
       >
         <ProductFields form={form} currency={props.currency} />
         <VariantsFields form={form} />
+        {saved === null ? (
+          <FormSection title="Снимки">
+            <p className="text-text-muted text-sm">
+              Снимките се добавят след създаване на продукта.
+            </p>
+          </FormSection>
+        ) : (
+          <ProductImages productId={saved.id} images={saved.images} />
+        )}
         {saved !== null && <DeleteProduct productId={saved.id} />}
       </form>
     </FormLayout>

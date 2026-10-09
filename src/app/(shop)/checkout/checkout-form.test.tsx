@@ -14,6 +14,7 @@ const view = {
       variantId: 'v1',
       productSlug: 'pvc-classic',
       productName: 'PVC Classic',
+      imageKey: null,
       variantName: 'Бяла',
       unitPrice: 1990,
       quantity: 2,

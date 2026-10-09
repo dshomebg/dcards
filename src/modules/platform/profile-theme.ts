@@ -15,7 +15,7 @@ export const DEFAULT_THEME: ProfileTheme = {
 
 // `logoBackground` дойде след първите редове (PLT-7) — стар json минава без миграция.
 export const profileThemeSchema = z.object({
-  preset: z.enum(['light', 'dark', 'sand']),
+  preset: z.enum(['light', 'dark', 'sand', 'petrol']),
   primaryColor: z
     .string()
     .regex(/^#[0-9a-f]{6}$/i)

@@ -30,6 +30,7 @@ import {
   rethrowUnique,
   type VariantInput,
 } from './product.service';
+import { readProductImages } from './product-images';
 
 export interface ProductEditVariantDto {
   readonly id: string;
@@ -41,7 +42,7 @@ export interface ProductEditVariantDto {
   readonly sortOrder: number;
 }
 
-/** Каквото вижда редакторът — изрични полета (DAT-7); `images` е без UI засега. */
+/** Каквото вижда редакторът — изрични полета (DAT-7). */
 export interface ProductEditDto {
   readonly id: string;
   readonly slug: string;
@@ -51,6 +52,8 @@ export interface ProductEditDto {
   readonly basePrice: number;
   readonly isActive: boolean;
   readonly updatedAt: Date;
+  /** Ключове в реда на витрината; първата е основната. */
+  readonly images: readonly string[];
   readonly variants: readonly ProductEditVariantDto[];
 }
 
@@ -79,6 +82,7 @@ function toDto(
     basePrice: product.basePrice,
     isActive: product.isActive,
     updatedAt: product.updatedAt,
+    images: readProductImages(product.images),
     variants: variants.map(toVariantDto),
   };
 }
@@ -201,16 +205,20 @@ export async function replaceVariants(
   });
 }
 
-/** Вариантите падат по cascade; с поръчки → `has_orders`. Несъществуващ → `product_not_found`. */
+/**
+ * Вариантите падат по cascade; с поръчки → `has_orders`. Несъществуващ → `product_not_found`.
+ * Връща ключовете на снимките — файловете ги трие извикващият (`shop` е без `node:fs`).
+ */
 export async function deleteProduct(
   executor: DbExecutor,
   productId: string,
-): Promise<void> {
-  let deleted: boolean;
+): Promise<string[]> {
+  let images: Product['images'] | null;
   try {
-    deleted = await deleteProductById(executor, productId);
+    images = await deleteProductById(executor, productId);
   } catch (error) {
     rethrowDbError(error);
   }
-  if (!deleted) throw new ProductError('product_not_found');
+  if (images === null) throw new ProductError('product_not_found');
+  return readProductImages(images);
 }

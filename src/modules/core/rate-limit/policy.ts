@@ -19,6 +19,9 @@ export const RATE_POLICY = {
   // Всяко „Изпрати отново" е писмо към чужд SMTP — 3/час стигат на реален човек.
   verifyResendUser: { limit: 3, windowSec: 3600 },
   apiIp: { limit: 60, windowSec: 60 },
+  // Снимките са статични и с година кеш, но витрина с 10 карти × 6 снимки
+  // изчерпва общия bucket зад общ NAT — отделен и по-широк таван за диска.
+  uploadsIp: { limit: 300, windowSec: 60 },
   // Claim с 6-цифрен код: 5/час на карта прави отгатването безнадеждно;
   // 10/час на потребител спира обхождане на много карти от един акаунт.
   claimUser: { limit: 10, windowSec: 3600 },
@@ -38,6 +41,9 @@ export const RATE_POLICY = {
   uploadIp: { limit: 10, windowSec: 3600 },
   // Снимка/лого на профил от влязъл: sharp + диск на всяко — 20/час на потребител.
   imageUploadUser: { limit: 20, windowSec: 3600 },
+  // Снимки на продукти: 10 продукта × 6 снимки за час на админ, над общия таван —
+  // всяко качване е sharp до 1200 px + диск.
+  adminImageUpload: { limit: 60, windowSec: 3600 },
   // Покана = писмо към чужд SMTP — 10/час на org, брои и „изпрати пак".
   inviteOrg: { limit: 10, windowSec: 3600 },
   // `/invite` е без auth и чете базата на всеки токен — таван по IP.
@@ -58,6 +64,7 @@ export const rateKey = {
   passwordChangeUser: (userId: string) => `rl:password:user:${userId}`,
   verifyResendUser: (userId: string) => `rl:verify-resend:user:${userId}`,
   apiIp: (ip: string) => `rl:api:ip:${ip}`,
+  uploadsIp: (ip: string) => `rl:uploads:ip:${ip}`,
   claimUser: (userId: string) => `rl:claim:user:${userId}`,
   claimCard: (cardId: string) => `rl:claim:card:${cardId}`,
   scanCard: (cardId: string) => `rl:scan:card:${cardId}`,
@@ -68,6 +75,7 @@ export const rateKey = {
   checkoutEmail: (email: string) => `rl:checkout:email:${email.toLowerCase()}`,
   uploadIp: (ip: string) => `rl:upload:ip:${ip}`,
   imageUploadUser: (userId: string) => `rl:image-upload:user:${userId}`,
+  adminImageUpload: (adminId: string) => `rl:image-upload:admin:${adminId}`,
   inviteOrg: (orgId: string) => `rl:invite:org:${orgId}`,
   inviteIp: (ip: string) => `rl:invite:ip:${ip}`,
   mailGlobal: () => 'rl:mail:global',

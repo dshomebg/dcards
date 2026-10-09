@@ -5,11 +5,11 @@
 
 import { z } from 'zod';
 
+import { deleteFilesQuietly } from '@/lib/delete-files';
 import { logUnexpected } from '@/lib/log-unexpected';
 import {
   createObjectKey,
   db,
-  deleteObject,
   IMAGE_MAX_BYTES,
   ImageError,
   processLogo,
@@ -50,16 +50,6 @@ const argsSchema = z.object({
 const PROCESS = { photo: processPhoto, logo: processLogo } as const;
 const FOLDER = { photo: 'photos', logo: 'logos' } as const;
 
-/** Провалът на триене е лог, не грешка — редът в базата е вече верен. */
-export async function deleteQuietly(key: string | null): Promise<void> {
-  if (key === null) return;
-  try {
-    await deleteObject(key);
-  } catch (error) {
-    logUnexpected('deleteObject', error);
-  }
-}
-
 /** Общият таван първо; качването има и свой (sharp + диск), 20/час. */
 async function authorize(): Promise<{ orgId: string } | { message: string }> {
   const { user, org } = await requireCurrent();
@@ -79,11 +69,11 @@ async function store(
   await putObject(key, webp);
   try {
     const previous = await setProfileImage(db, { ...input, key });
-    await deleteQuietly(previous);
+    await deleteFilesQuietly([previous]);
     return { ok: true, key };
   } catch (error) {
     // Записът в базата не мина — новият файл не бива да остане сираче.
-    await deleteQuietly(key);
+    await deleteFilesQuietly([key]);
     throw error;
   }
 }
@@ -135,7 +125,7 @@ export async function removeProfileImageAction(
       orgId: org.id,
       key: null,
     });
-    await deleteQuietly(previous);
+    await deleteFilesQuietly([previous]);
     return { ok: true };
   } catch (error) {
     if (error instanceof ProfileError) return failure(error.message);

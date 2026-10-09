@@ -44,7 +44,7 @@ export const profileLinkTypeEnum = pgEnum(
 
 /** `layout` има една стойност засега — за да не иска миграция, когато дойде втора. */
 export interface ProfileTheme {
-  readonly preset: 'light' | 'dark' | 'sand';
+  readonly preset: 'light' | 'dark' | 'sand' | 'petrol';
   /** Pro: `#rrggbb` с малки букви; `null` = цветът на preset-а. */
   readonly primaryColor: string | null;
   /** Pro: логото като воден знак под съдържанието. */

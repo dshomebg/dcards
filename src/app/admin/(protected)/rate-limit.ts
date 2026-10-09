@@ -15,3 +15,16 @@ export async function adminActionLimit(
   );
   return result.allowed ? null : result.retryAfterSec;
 }
+
+/** Качване на снимка на продукт — отделно от общия таван (виж `RATE_POLICY`). */
+export async function adminImageUploadLimit(
+  adminId: string,
+): Promise<number | null> {
+  const { limit, windowSec } = RATE_POLICY.adminImageUpload;
+  const result = await rateLimit.consume(
+    rateKey.adminImageUpload(adminId),
+    limit,
+    windowSec,
+  );
+  return result.allowed ? null : result.retryAfterSec;
+}

@@ -133,3 +133,14 @@ export {
   replaceVariants,
   updateProduct,
 } from './product-edit.service';
+export {
+  isProductImageKey,
+  MAX_PRODUCT_IMAGES,
+  readProductImages,
+} from './product-images';
+export {
+  addProductImage,
+  type ProductImages,
+  removeProductImage,
+  reorderProductImages,
+} from './product-images.service';
